@@ -113,7 +113,7 @@ export function renderScriptSection(elements, state) {
     elements.scriptModuleState.innerHTML = renderStateCard({
       variant: "loading",
       title: "正在生成拍摄方案",
-      message: `${activeRequest.label || "AI 处理中"}，结果会按板块写入下方区域。`
+      message: `${activeRequest.label || "AI 处理中"}，正在请求模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。`
     });
     fillPlanContainers(elements, merged);
     return;

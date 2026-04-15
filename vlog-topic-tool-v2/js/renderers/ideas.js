@@ -9,7 +9,14 @@ import {
 
 function renderReferenceIdeas(state) {
   if (state.requests.referenceIdeas?.status === "loading") {
-    return renderSkeletonCards(2);
+    return `
+      ${renderStateCard({
+        variant: "loading",
+        title: "正在生成参考选题",
+        message: "正在请求模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。"
+      })}
+      ${renderSkeletonCards(2)}
+    `;
   }
 
   if (state.requests.referenceIdeas?.status === "error") {
@@ -55,7 +62,14 @@ function renderReferenceIdeas(state) {
 
 function renderCreativeIdeas(state) {
   if (state.requests.creativeIdeas?.status === "loading") {
-    return renderSkeletonCards(2);
+    return `
+      ${renderStateCard({
+        variant: "loading",
+        title: "正在生成创意选题",
+        message: "正在请求模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。"
+      })}
+      ${renderSkeletonCards(2)}
+    `;
   }
 
   if (state.requests.creativeIdeas?.status === "error") {

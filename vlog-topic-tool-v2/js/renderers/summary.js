@@ -58,6 +58,14 @@ function getFailureGuidance(errorCode, source, status) {
     };
   }
 
+  if (errorCode === "REQUEST_TIMEOUT") {
+    return {
+      title: "失败原因",
+      reason: "模型响应时间超过当前等待上限，本次请求已被安全终止。",
+      nextStep: "下一步：稍后重试，或减少输入内容长度；如果线上经常出现，请调大 generate timeout。"
+    };
+  }
+
   if (errorCode === "AUTH_FAILED") {
     return {
       title: "失败原因",
@@ -99,10 +107,13 @@ function buildConnectionReport(state) {
     baseURL: report?.baseURL || state.devConfig.baseURL || "默认 provider 地址",
     endpoint: report?.endpoint || state.devConfig.backendEndpoint || "/api/generate",
     status: isLoading ? "loading" : report ? (report.success ? "success" : "failed") : "idle",
-    message: isLoading ? "连接中，请稍等..." : report?.message || "尚未执行连接测试。",
+    message: isLoading ? "连接中，通常 5-15 秒内返回。" : report?.message || "尚未执行连接测试。",
     errorCode: report?.errorCode || "—",
     latencyMs: report?.latencyMs ?? null,
-    source: isLoading ? "pending" : report?.source || "pending"
+    source: isLoading ? "pending" : report?.source || "pending",
+    retryCount: Number(report?.retryCount || 0),
+    timedOut: Boolean(report?.timedOut),
+    retryReason: report?.retryReason || null
   };
 }
 
@@ -123,7 +134,9 @@ function renderConnectionReport(state) {
     ["message", report.message],
     ["error code", report.errorCode],
     ["latency", formatLatency(report.latencyMs)],
-    ["source", formatSourceLabel(report.source)]
+    ["source", formatSourceLabel(report.source)],
+    ["retry", report.retryCount > 0 ? `${report.retryCount}x` : "no"],
+    ["timeout", report.timedOut ? "yes" : "no"]
   ];
   const guidance = getFailureGuidance(report.errorCode, report.source, report.status);
   const alertClass =
@@ -198,7 +211,7 @@ function renderFeedback(state) {
   const loadingTask = Object.values(state.requests).find((request) => request.status === "loading");
 
   if (loadingTask) {
-    return `<div class="feedback-box is-loading"><strong>正在生成</strong><p>${escapeHtml(loadingTask.label)}</p></div>`;
+    return `<div class="feedback-box is-loading"><strong>正在生成</strong><p>${escapeHtml(`${loadingTask.label}已发送到模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。`)}</p></div>`;
   }
 
   if (state.ui.message) {

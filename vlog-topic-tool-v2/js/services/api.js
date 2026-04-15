@@ -10,9 +10,18 @@ function resolveProviderLabel(provider) {
   return providerLabelMap[provider] || provider || "AI Provider";
 }
 
+function resolveReadableMessage(code, message, fallbackMessage) {
+  if (code === "REQUEST_TIMEOUT") {
+    return "模型响应时间过长，请稍后重试，或减少输入内容长度。";
+  }
+
+  return message || fallbackMessage;
+}
+
 function createApiError(errorPayload = {}, fallbackMessage = "请求失败", envelope = {}) {
-  const error = new Error(errorPayload.message || fallbackMessage);
-  error.code = errorPayload.code || envelope.errorCode || "API_ERROR";
+  const code = errorPayload.code || envelope.errorCode || "API_ERROR";
+  const error = new Error(resolveReadableMessage(code, errorPayload.message, fallbackMessage));
+  error.code = code;
   error.details = errorPayload.details || [];
   error.task = errorPayload.task || null;
   error.receivedPreview = errorPayload.receivedPreview || null;
@@ -24,6 +33,10 @@ function createApiError(errorPayload = {}, fallbackMessage = "请求失败", env
   error.latencyMs = envelope.latencyMs ?? null;
   error.transport = envelope.transport || null;
   error.source = envelope.source || null;
+  error.retryCount = Number(envelope.retryCount ?? errorPayload.retryCount ?? 0);
+  error.retried = Boolean(envelope.retried ?? errorPayload.retried);
+  error.timedOut = Boolean(envelope.timedOut ?? errorPayload.timedOut ?? code === "REQUEST_TIMEOUT");
+  error.retryReason = envelope.retryReason || errorPayload.retryReason || null;
   return error;
 }
 
@@ -69,6 +82,10 @@ function createMockConnectionResult(devConfig, error) {
     latencyMs: error?.latencyMs ?? null,
     errorCode: error?.code || "NETWORK_ERROR",
     transport: "mock",
+    retryCount: 0,
+    retried: false,
+    timedOut: false,
+    retryReason: null,
     message: `${resolveProviderLabel(devConfig.provider)} 暂时不可用，已启用 Mock Fallback。${error?.message ? ` 原因：${error.message}` : ""}`
   };
 }

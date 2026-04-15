@@ -2,6 +2,7 @@ const {
   buildEndpoint,
   buildProviderHeaders,
   createProviderError,
+  isTimeoutError,
   mapResponseError,
   parseErrorText,
   parseJsonResponse,
@@ -11,12 +12,16 @@ const {
   standardizedErrorCodes
 } = require("./providerUtils");
 
-function buildMeta({ provider, resolved, latencyMs }) {
+function buildMeta({ provider, resolved, latencyMs, endpoint = null, retryCount = 0, timedOut = false }) {
   return {
     provider,
     model: resolved.model || "未指定模型",
     baseURL: resolved.baseURL,
-    latencyMs
+    endpoint,
+    latencyMs,
+    retryCount,
+    retried: retryCount > 0,
+    timedOut
   };
 }
 
@@ -48,14 +53,32 @@ async function performRequest(url, requestInit, context = {}) {
 
   try {
     response = await fetch(url, requestInit);
-  } catch (_error) {
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw createProviderError(
+        standardizedErrorCodes.REQUEST_TIMEOUT,
+        `${context.providerLabel || "AI Provider"} 响应时间过长，请稍后重试，或减少输入内容长度。`,
+        [],
+        {
+          ...context,
+          latencyMs: Date.now() - startedAt,
+          timedOut: true,
+          retryCount: 0,
+          retried: false
+        }
+      );
+    }
+
     throw createProviderError(
       standardizedErrorCodes.NETWORK_ERROR,
       `${context.providerLabel || "AI Provider"} 无法连接，请检查网络、Base URL 或服务可用性。`,
       [],
       {
         ...context,
-        latencyMs: Date.now() - startedAt
+        latencyMs: Date.now() - startedAt,
+        timedOut: false,
+        retryCount: 0,
+        retried: false
       }
     );
   }
@@ -78,7 +101,10 @@ async function performRequest(url, requestInit, context = {}) {
 }
 
 async function testOpenAICompatibleConnection(config = {}, options = {}) {
-  const resolved = resolveProviderConfig(config, options);
+  const resolved = resolveProviderConfig(config, {
+    ...options,
+    routeKind: "test"
+  });
   const providerLabel = options.providerLabel || "OpenAI Compatible";
   const connectionMode = resolveConnectionMode(config, options);
 
@@ -110,7 +136,8 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
         provider: config.provider || "openai_compatible",
         model: resolved.model,
         baseURL: resolved.baseURL,
-        routeType: "chat_completions"
+        routeType: "chat_completions",
+        endpoint: completionUrl
       }
     );
 
@@ -131,7 +158,8 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
           ...buildMeta({
             provider: config.provider || "openai_compatible",
             resolved,
-            latencyMs
+            latencyMs,
+            endpoint: completionUrl
           }),
           receivedPreview: JSON.stringify(payload).slice(0, 400)
         }
@@ -145,7 +173,8 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
       ...buildMeta({
         provider: config.provider || "openai_compatible",
         resolved,
-        latencyMs
+        latencyMs,
+        endpoint: completionUrl
       })
     };
   }
@@ -161,7 +190,8 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
     provider: config.provider || "openai_compatible",
     model: resolved.model,
     baseURL: resolved.baseURL,
-    routeType: "models"
+    routeType: "models",
+    endpoint: listModelsUrl
   });
   const { json } = await safeJson(response);
   const models = Array.isArray(json?.data)
@@ -176,7 +206,8 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
       buildMeta({
         provider: config.provider || "openai_compatible",
         resolved,
-        latencyMs
+        latencyMs,
+        endpoint: listModelsUrl
       })
     );
   }
@@ -188,13 +219,17 @@ async function testOpenAICompatibleConnection(config = {}, options = {}) {
     ...buildMeta({
       provider: config.provider || "openai_compatible",
       resolved,
-      latencyMs
+      latencyMs,
+      endpoint: listModelsUrl
     })
   };
 }
 
 async function requestChatCompletion(config = {}, options = {}) {
-  const resolved = resolveProviderConfig(config, options);
+  const resolved = resolveProviderConfig(config, {
+    ...options,
+    routeKind: "generate"
+  });
 
   if (!resolved.model) {
     throw createProviderError(standardizedErrorCodes.MODEL_NOT_FOUND, "缺少模型名称，请先填写 model。");
@@ -252,11 +287,12 @@ async function requestChatCompletion(config = {}, options = {}) {
         }
       ],
       {
-        ...buildMeta({
-          provider: config.provider || "openai_compatible",
-          resolved,
-          latencyMs
-        }),
+          ...buildMeta({
+            provider: config.provider || "openai_compatible",
+            resolved,
+            latencyMs,
+            endpoint: completionUrl
+          }),
         receivedPreview: JSON.stringify(completion).slice(0, 400)
       }
     );
@@ -272,7 +308,8 @@ async function requestChatCompletion(config = {}, options = {}) {
       buildMeta({
         provider: config.provider || "openai_compatible",
         resolved,
-        latencyMs
+        latencyMs,
+        endpoint: completionUrl
       })
     );
   }
@@ -283,7 +320,8 @@ async function requestChatCompletion(config = {}, options = {}) {
     ...buildMeta({
       provider: config.provider || "openai_compatible",
       resolved,
-      latencyMs
+      latencyMs,
+      endpoint: completionUrl
     })
   };
 }

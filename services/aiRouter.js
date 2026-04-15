@@ -73,6 +73,10 @@ function buildMetaEnvelope({ task, provider, providerLabel, result, repairMeta }
     transport: "live",
     source: result.source || "real",
     latencyMs: result.latencyMs || null,
+    retryCount: Number(result.retryCount || 0),
+    retried: Boolean(result.retried),
+    timedOut: Boolean(result.timedOut),
+    retryReason: result.retryReason || null,
     generatedAt: new Date().toISOString(),
     repairApplied: Boolean(repairMeta?.applied),
     repairNotes: repairMeta?.notes || [],
@@ -91,6 +95,7 @@ function sendError(response, error, task = "", extra = {}) {
     AUTH_FAILED: 401,
     MODEL_NOT_FOUND: 404,
     RATE_LIMITED: 429,
+    REQUEST_TIMEOUT: 504,
     NETWORK_ERROR: 502,
     INVALID_PROVIDER_RESPONSE: 502,
     PROVIDER_BUSINESS_ERROR: 502
@@ -110,6 +115,10 @@ function sendError(response, error, task = "", extra = {}) {
     endpoint: extra.endpoint || error.endpoint || null,
     transport: extra.transport || error.transport || "live",
     source: extra.source || error.source || "real",
+    retryCount: Number(extra.retryCount ?? error.retryCount ?? 0),
+    retried: Boolean(extra.retried ?? error.retried),
+    timedOut: Boolean(extra.timedOut ?? error.timedOut ?? error.code === "REQUEST_TIMEOUT"),
+    retryReason: extra.retryReason || error.retryReason || null,
     providerRaw: extra.providerRaw || error.providerRaw || null,
     error: {
       code: error.code || "AI_ROUTER_ERROR",
@@ -161,6 +170,10 @@ function createAiRouter() {
         errorCode: null,
         transport: "live",
         source: result.source || "real",
+        retryCount: Number(result.retryCount || 0),
+        retried: Boolean(result.retried),
+        timedOut: Boolean(result.timedOut),
+        retryReason: result.retryReason || null,
         providerRaw: result.providerRaw || null,
         message: result.message || `${provider.label} 连接成功，可以开始生成。`
       });

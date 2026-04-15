@@ -890,7 +890,11 @@ function buildConnectionReportPayload({
   message,
   errorCode,
   latencyMs,
-  source
+  source,
+  retryCount = 0,
+  retried = false,
+  timedOut = false,
+  retryReason = null
 }) {
   return {
     provider,
@@ -901,7 +905,11 @@ function buildConnectionReportPayload({
     message,
     errorCode,
     latencyMs,
-    source
+    source,
+    retryCount,
+    retried,
+    timedOut,
+    retryReason
   };
 }
 
@@ -922,7 +930,11 @@ function updateConnectionReportFromSuccess(result, devConfig) {
         (source === "mock" ? "真实 provider 当前不可用，已启用 Mock Fallback。" : "连接成功，可以开始生成。"),
       errorCode: result.errorCode || "—",
       latencyMs: result.latencyMs ?? null,
-      source
+      source,
+      retryCount: Number(result.retryCount || 0),
+      retried: Boolean(result.retried),
+      timedOut: Boolean(result.timedOut),
+      retryReason: result.retryReason || null
     })
   );
 }
@@ -939,7 +951,11 @@ function updateConnectionReportFromError(error, devConfig) {
       message: error.message || "连接测试失败。",
       errorCode: error.code || "API_ERROR",
       latencyMs: error.latencyMs ?? null,
-      source: error.transport === "mock" ? "mock" : "real"
+      source: error.transport === "mock" ? "mock" : "real",
+      retryCount: Number(error.retryCount || 0),
+      retried: Boolean(error.retried),
+      timedOut: Boolean(error.timedOut || error.code === "REQUEST_TIMEOUT"),
+      retryReason: error.retryReason || null
     })
   );
 }
@@ -960,18 +976,23 @@ async function handleConnectionTest() {
         model: devConfig.model,
         baseURL: devConfig.baseURL,
         endpoint: resolveConnectionEndpoint(devConfig.backendEndpoint),
-        success: false,
-        message,
-        errorCode: "INVALID_CLIENT_INPUT",
-        latencyMs: null,
-        source: "pending"
-      })
-    );
+      success: false,
+      message,
+      errorCode: "INVALID_CLIENT_INPUT",
+      latencyMs: null,
+      source: "pending",
+      retryCount: 0,
+      retried: false,
+      timedOut: false,
+      retryReason: null
+    })
+  );
     setRequest("connectionTest", {
       status: "error",
       label: "连接测试",
       error: message,
-      errorDetails: validation.issues.map((item) => ({ path: "devConfig", message: item }))
+      errorDetails: validation.issues.map((item) => ({ path: "devConfig", message: item })),
+      errorCode: "INVALID_CLIENT_INPUT"
     });
     setUiMessage(message, "error");
     setErrorPanel(
@@ -1003,10 +1024,15 @@ async function handleConnectionTest() {
       message: "连接中，请稍等...",
       errorCode: "—",
       latencyMs: null,
-      source: "pending"
+      source: "pending",
+      retryCount: 0,
+      retried: false,
+      timedOut: false,
+      retryReason: null
     })
   );
-  setConnectionStatus("idle", "连接中，请稍等...");
+  setConnectionStatus("idle", "连接中，通常 5-15 秒内返回。");
+  setUiMessage("连接测试已发出，通常 5-15 秒内返回。");
 
   try {
     const result = await testConnection(devConfig);
@@ -1015,7 +1041,8 @@ async function handleConnectionTest() {
       status: "success",
       label: "连接测试",
       error: null,
-      errorDetails: null
+      errorDetails: null,
+      errorCode: null
     });
     setUiMessage(
       result.transport === "mock"
@@ -1029,7 +1056,8 @@ async function handleConnectionTest() {
       status: "error",
       label: "连接测试",
       error: error.message,
-      errorDetails: error.details || []
+      errorDetails: error.details || [],
+      errorCode: error.code || "API_ERROR"
     });
     setUiMessage(error.message, "error");
     setErrorPanel(buildErrorPanel(error, { taskLabel: "连接测试", retryAction: "connectionTest" }));
@@ -1175,6 +1203,7 @@ async function runTask(taskKey, options = {}) {
     errorDetails: null,
     startedAt: new Date().toISOString()
   });
+  setUiMessage("正在请求模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。");
 
   try {
     if (isWorkflowManagedTask(taskKey)) {
@@ -1191,6 +1220,7 @@ async function runTask(taskKey, options = {}) {
       label: request.label,
       error: null,
       errorDetails: null,
+      errorCode: null,
       finishedAt: new Date().toISOString()
     });
 
@@ -1213,6 +1243,7 @@ async function runTask(taskKey, options = {}) {
       label: request.label,
       error: error.message,
       errorDetails: error.details || [],
+      errorCode: error.code || "API_ERROR",
       finishedAt: new Date().toISOString()
     });
 

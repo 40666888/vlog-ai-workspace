@@ -1,4 +1,6 @@
 const DEFAULT_TIMEOUT_MS = Number(process.env.AI_REQUEST_TIMEOUT_MS || 45000);
+const DEFAULT_TEST_TIMEOUT_MS = Number(process.env.AI_TEST_TIMEOUT_MS || 15000);
+const DEFAULT_GENERATE_TIMEOUT_MS = Number(process.env.AI_GENERATE_TIMEOUT_MS || 90000);
 
 const standardizedErrorCodes = {
   MISSING_API_KEY: "MISSING_API_KEY",
@@ -6,6 +8,7 @@ const standardizedErrorCodes = {
   AUTH_FAILED: "AUTH_FAILED",
   MODEL_NOT_FOUND: "MODEL_NOT_FOUND",
   RATE_LIMITED: "RATE_LIMITED",
+  REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
   NETWORK_ERROR: "NETWORK_ERROR",
   INVALID_PROVIDER_RESPONSE: "INVALID_PROVIDER_RESPONSE",
   PROVIDER_BUSINESS_ERROR: "PROVIDER_BUSINESS_ERROR"
@@ -45,9 +48,37 @@ function normalizePathSuffix(value) {
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
-function resolveTimeoutMs(value) {
+function resolveTimeoutMs(value, fallback = DEFAULT_TIMEOUT_MS) {
   const timeoutValue = Number(value);
-  return Number.isFinite(timeoutValue) && timeoutValue > 0 ? timeoutValue : DEFAULT_TIMEOUT_MS;
+  return Number.isFinite(timeoutValue) && timeoutValue > 0 ? timeoutValue : fallback;
+}
+
+function resolveRouteTimeoutMs(providerOptions = {}, routeKind = "request") {
+  if (routeKind === "test") {
+    return resolveTimeoutMs(providerOptions.testTimeoutMs ?? providerOptions.timeoutMs, DEFAULT_TEST_TIMEOUT_MS);
+  }
+
+  if (routeKind === "generate") {
+    return resolveTimeoutMs(providerOptions.generateTimeoutMs ?? providerOptions.timeoutMs, DEFAULT_GENERATE_TIMEOUT_MS);
+  }
+
+  return resolveTimeoutMs(providerOptions.timeoutMs, DEFAULT_TIMEOUT_MS);
+}
+
+function isTimeoutError(error) {
+  const name = String(error?.name || "").trim().toLowerCase();
+  const code = String(error?.code || "").trim().toLowerCase();
+  const message = String(error?.message || "").trim().toLowerCase();
+
+  return (
+    name.includes("timeout") ||
+    name === "aborterror" ||
+    code === "abort_err" ||
+    code === "timeout" ||
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("signal timed out")
+  );
 }
 
 function buildProviderHeaders(apiKey, extraHeaders = {}) {
@@ -88,6 +119,18 @@ function mapResponseError(response, message, context = {}) {
     return createProviderError(standardizedErrorCodes.RATE_LIMITED, message || "请求过于频繁，请稍后再试。", [], context);
   }
 
+  if (response.status === 408 || response.status === 504) {
+    return createProviderError(
+      standardizedErrorCodes.REQUEST_TIMEOUT,
+      message || "模型响应时间过长，请稍后重试，或减少输入内容长度。",
+      [],
+      {
+        ...context,
+        timedOut: true
+      }
+    );
+  }
+
   if (response.status === 404 && routeType === "models") {
     return createProviderError(
       standardizedErrorCodes.INVALID_BASE_URL,
@@ -124,7 +167,7 @@ function resolveProviderConfig(config = {}, options = {}) {
     ? ensureString(envModel, config.model || options.defaultModel || "")
     : ensureString(config.model, envModel || options.defaultModel || "");
   const providerOptions = config.providerOptions || {};
-  const timeoutMs = resolveTimeoutMs(providerOptions.timeoutMs || process.env.AI_REQUEST_TIMEOUT_MS);
+  const timeoutMs = resolveRouteTimeoutMs(providerOptions, options.routeKind || "request");
   const pathSuffix = normalizePathSuffix(providerOptions.pathSuffix || options.defaultPathSuffix || "");
   const extraHeaders =
     providerOptions.headers && typeof providerOptions.headers === "object" && !Array.isArray(providerOptions.headers)
@@ -249,7 +292,9 @@ module.exports = {
   parseJsonResponse,
   resolveContent,
   resolveProviderConfig,
+  resolveRouteTimeoutMs,
   resolveTimeoutMs,
   safeJson,
-  standardizedErrorCodes
+  standardizedErrorCodes,
+  isTimeoutError
 };

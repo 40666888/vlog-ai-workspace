@@ -27,6 +27,15 @@ function resolveTransportLabel(meta = {}) {
   return "source: real provider";
 }
 
+function resolveRetryLabel(meta = {}) {
+  const retryCount = Number(meta.retryCount || 0);
+  return retryCount > 0 ? `retry: ${retryCount}x` : "retry: no";
+}
+
+function resolveTimeoutLabel(meta = {}) {
+  return meta.timedOut ? "timeout: yes" : "timeout: no";
+}
+
 export function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -79,7 +88,7 @@ export function renderStringList(items, emptyMessage = "暂时还没有内容。
 
 export function renderStatusText(meta, request) {
   if (request?.status === "loading") {
-    return `${request.label || "AI 处理中"}，请稍等...`;
+    return `${request.label || "AI 处理中"} · 正在请求模型，可能需要 20-60 秒 · 如果等待较久，请不要重复点击`;
   }
 
   if (request?.status === "error") {
@@ -105,5 +114,7 @@ export function renderStatusText(meta, request) {
   }
 
   parts.push(resolveTransportLabel(meta));
+  parts.push(resolveRetryLabel(meta));
+  parts.push(resolveTimeoutLabel(meta));
   return parts.join(" · ");
 }

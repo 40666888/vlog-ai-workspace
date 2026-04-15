@@ -2,6 +2,7 @@ const {
   buildEndpoint,
   buildProviderHeaders,
   createProviderError,
+  isTimeoutError,
   parseJsonResponse,
   resolveContent,
   resolveProviderConfig,
@@ -13,15 +14,20 @@ const MINIMAX_NATIVE_DEFAULT_BASE_URL = "https://api.minimaxi.com/v1";
 const MINIMAX_NATIVE_DEFAULT_MODEL = process.env.MINIMAX_NATIVE_MODEL || "MiniMax-M2.7";
 const MINIMAX_NATIVE_COMPLETION_PATH = "/text/chatcompletion_v2";
 const MINIMAX_NATIVE_RETRY_DELAYS_MS = [1000, 3000];
+const MINIMAX_NATIVE_TRANSIENT_RETRY_DELAY_MS = 1000;
 
-function buildMeta({ resolved, latencyMs, endpoint }) {
+function buildMeta({ resolved, latencyMs, endpoint, retryCount = 0, timedOut = false, retryReason = null }) {
   return {
     provider: "minimax_native",
     model: resolved.model || "未指定模型",
     baseURL: resolved.baseURL,
     endpoint,
     latencyMs,
-    source: "real"
+    source: "real",
+    retryCount,
+    retried: retryCount > 0,
+    timedOut,
+    retryReason
   };
 }
 
@@ -88,6 +94,18 @@ function mapMinimaxNativeError(response, payload, rawText, context = {}) {
     return createProviderError(standardizedErrorCodes.RATE_LIMITED, message || "MiniMax Native 返回限流。", [], extras);
   }
 
+  if (response.status === 408 || response.status === 504 || loweredMessage.includes("timeout")) {
+    return createProviderError(
+      standardizedErrorCodes.REQUEST_TIMEOUT,
+      message || "MiniMax Native 响应时间过长，请稍后重试，或减少输入内容长度。",
+      [],
+      {
+        ...extras,
+        timedOut: true
+      }
+    );
+  }
+
   if (response.status === 529 || providerHttpCode === 529 || providerErrorType === "overloaded_error") {
     return createProviderError(standardizedErrorCodes.PROVIDER_BUSINESS_ERROR, message, [], extras);
   }
@@ -133,10 +151,19 @@ function buildNativeRequestBody({ model, temperature, systemPrompt, userPrompt }
   return body;
 }
 
+function sleep(delayMs) {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
 async function performMinimaxNativeRequest(resolved, requestBody, context = {}) {
   const endpoint = buildEndpoint(resolved.baseURL, resolved.pathSuffix, MINIMAX_NATIVE_COMPLETION_PATH);
   const startedAt = Date.now();
-  for (let attempt = 0; attempt <= MINIMAX_NATIVE_RETRY_DELAYS_MS.length; attempt += 1) {
+  let overloadRetryCount = 0;
+  let transientRetryCount = 0;
+  let retryReason = null;
+
+  while (true) {
+    const retryCount = overloadRetryCount + transientRetryCount;
     let response;
 
     try {
@@ -146,7 +173,41 @@ async function performMinimaxNativeRequest(resolved, requestBody, context = {}) 
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(resolved.timeoutMs)
       });
-    } catch (_error) {
+    } catch (error) {
+      const latencyMs = Date.now() - startedAt;
+
+      if (isTimeoutError(error)) {
+        if (context.allowTransientRetry && transientRetryCount < 1) {
+          transientRetryCount += 1;
+          retryReason = "timeout";
+          await sleep(MINIMAX_NATIVE_TRANSIENT_RETRY_DELAY_MS);
+          continue;
+        }
+
+        throw createProviderError(
+          standardizedErrorCodes.REQUEST_TIMEOUT,
+          "MiniMax Native 响应时间过长，请稍后重试，或减少输入内容长度。",
+          [],
+          {
+            ...context,
+            endpoint,
+            latencyMs,
+            source: "real",
+            retryCount,
+            retried: retryCount > 0,
+            timedOut: true,
+            retryReason: retryReason || "timeout"
+          }
+        );
+      }
+
+      if (context.allowTransientRetry && transientRetryCount < 1) {
+        transientRetryCount += 1;
+        retryReason = "network";
+        await sleep(MINIMAX_NATIVE_TRANSIENT_RETRY_DELAY_MS);
+        continue;
+      }
+
       throw createProviderError(
         standardizedErrorCodes.NETWORK_ERROR,
         "MiniMax Native 无法连接，请检查网络、Base URL 或服务可用性。",
@@ -154,8 +215,12 @@ async function performMinimaxNativeRequest(resolved, requestBody, context = {}) 
         {
           ...context,
           endpoint,
-          latencyMs: Date.now() - startedAt,
-          source: "real"
+          latencyMs,
+          source: "real",
+          retryCount,
+          retried: retryCount > 0,
+          timedOut: false,
+          retryReason
         }
       );
     }
@@ -166,12 +231,17 @@ async function performMinimaxNativeRequest(resolved, requestBody, context = {}) 
     const meta = buildMeta({
       resolved,
       latencyMs,
-      endpoint
+      endpoint,
+      retryCount,
+      timedOut: false,
+      retryReason
     });
 
     if (!response.ok) {
-      if (isMinimaxOverloaded(response, json) && attempt < MINIMAX_NATIVE_RETRY_DELAYS_MS.length) {
-        await new Promise((resolve) => setTimeout(resolve, MINIMAX_NATIVE_RETRY_DELAYS_MS[attempt]));
+      if (isMinimaxOverloaded(response, json) && overloadRetryCount < MINIMAX_NATIVE_RETRY_DELAYS_MS.length) {
+        retryReason = "provider_overload";
+        await sleep(MINIMAX_NATIVE_RETRY_DELAYS_MS[overloadRetryCount]);
+        overloadRetryCount += 1;
         continue;
       }
 
@@ -205,12 +275,6 @@ async function performMinimaxNativeRequest(resolved, requestBody, context = {}) 
       ...meta
     };
   }
-
-  throw createProviderError(standardizedErrorCodes.PROVIDER_BUSINESS_ERROR, "MiniMax Native 重试后仍然失败。", [], {
-    ...context,
-    endpoint,
-    source: "real"
-  });
 }
 
 function resolveGeneratedContent(payload = {}) {
@@ -223,19 +287,20 @@ function resolveGeneratedContent(payload = {}) {
   return String(payload?.reply || payload?.output || "").trim();
 }
 
-function resolveMinimaxNativeConfig(config = {}) {
+function resolveMinimaxNativeConfig(config = {}, routeKind = "generate") {
   return resolveProviderConfig(config, {
     envApiKeyName: "MINIMAX_NATIVE_API_KEY",
     envBaseURLName: "MINIMAX_NATIVE_BASE_URL",
     envModelName: "MINIMAX_NATIVE_MODEL",
     defaultBaseURL: MINIMAX_NATIVE_DEFAULT_BASE_URL,
     defaultModel: MINIMAX_NATIVE_DEFAULT_MODEL,
-    defaultPathSuffix: ""
+    defaultPathSuffix: "",
+    routeKind
   });
 }
 
 async function testMinimaxNativeConnection(config = {}) {
-  const resolved = resolveMinimaxNativeConfig(config);
+  const resolved = resolveMinimaxNativeConfig(config, "test");
 
   if (!resolved.model) {
     throw createProviderError(standardizedErrorCodes.MODEL_NOT_FOUND, "缺少模型名称，请先填写 model。");
@@ -252,7 +317,8 @@ async function testMinimaxNativeConnection(config = {}) {
     {
       provider: "minimax_native",
       model: resolved.model,
-      baseURL: resolved.baseURL
+      baseURL: resolved.baseURL,
+      allowTransientRetry: false
     }
   );
 
@@ -272,7 +338,7 @@ async function testMinimaxNativeConnection(config = {}) {
 }
 
 async function generateWithMinimaxNative(config = {}) {
-  const resolved = resolveMinimaxNativeConfig(config);
+  const resolved = resolveMinimaxNativeConfig(config, "generate");
 
   if (!resolved.model) {
     throw createProviderError(standardizedErrorCodes.MODEL_NOT_FOUND, "缺少模型名称，请先填写 model。");
@@ -289,7 +355,9 @@ async function generateWithMinimaxNative(config = {}) {
     {
       provider: "minimax_native",
       model: resolved.model,
-      baseURL: resolved.baseURL
+      baseURL: resolved.baseURL,
+      task: config.promptPackage?.task || "generate",
+      allowTransientRetry: true
     }
   );
 

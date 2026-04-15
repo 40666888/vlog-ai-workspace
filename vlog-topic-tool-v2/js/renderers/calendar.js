@@ -13,7 +13,7 @@ export function renderCalendarSection(elements, state) {
     elements.calendarModuleState.innerHTML = renderStateCard({
       variant: "loading",
       title: "正在生成日历摘要",
-      message: "AI 正在根据当前选题和更新频率整理未来几天的工作安排。"
+      message: "正在请求模型，可能需要 20-60 秒；如果等待较久，请不要重复点击。"
     });
   } else if (request?.status === "error") {
     elements.calendarModuleState.innerHTML = renderStateCard({

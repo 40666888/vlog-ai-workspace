@@ -170,6 +170,8 @@ NODE_ENV=production
 HOST=0.0.0.0
 AI_RUN_MODE=local-dev
 AI_REQUEST_TIMEOUT_MS=45000
+AI_TEST_TIMEOUT_MS=15000
+AI_GENERATE_TIMEOUT_MS=90000
 ```
 
 6. 如果你要改成服务端托管密钥，再额外设置：
@@ -206,6 +208,8 @@ NODE_ENV=production
 HOST=0.0.0.0
 AI_RUN_MODE=local-dev
 AI_REQUEST_TIMEOUT_MS=45000
+AI_TEST_TIMEOUT_MS=15000
+AI_GENERATE_TIMEOUT_MS=90000
 ```
 
 6. 部署后验证：
@@ -241,6 +245,8 @@ Render / Railway 都支持绑定自定义域名，步骤基本一致：
 - `PORT`
 - `AI_RUN_MODE`
 - `AI_REQUEST_TIMEOUT_MS`
+- `AI_TEST_TIMEOUT_MS`
+- `AI_GENERATE_TIMEOUT_MS`
 - `OPENAI_MODEL`
 - `OPENAI_COMPATIBLE_MODEL`
 - `OPENAI_COMPATIBLE_BASE_URL`
@@ -252,6 +258,7 @@ Render / Railway 都支持绑定自定义域名，步骤基本一致：
 - 公开网址默认不要把 `mock fallback` 当成真实 AI 结果。
 - 如果要对外测试，优先用 `local-dev`，让每个用户自己填 key。
 - 如果要用 `server-managed`，请确认服务端 key 只保存在部署平台环境变量中。
+- 线上推荐把 `AI_TEST_TIMEOUT_MS` 设为 `15000`，把 `AI_GENERATE_TIMEOUT_MS` 设为 `90000`，避免把轻量连接测试和真实生成任务混用同一个 timeout。
 - 当前项目没有登录、配额、限流和审计，暂不适合大规模公开分发。
 - 正式上线前，至少先验证 `/api/health`、`/api/test-connection`、`/api/generate` 在 HTTPS 下都可用。
 
