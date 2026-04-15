@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="适合长期使用的晨间提醒日历，支持任务录入、提醒、真实进度调整、周月年统计和 JSON 备份恢复。">
+  <title>晨间提醒日历 · 长期使用版</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <p class="eyebrow">提醒型日历 · 本地保存</p>
+        <h1>晨间提醒日历</h1>
+        <p class="brand-copy">先看今天，再录入和推进任务。</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="requestNotificationBtn" class="primary-btn" type="button">开启浏览器提醒</button>
+        <button id="exportBtn" class="secondary-btn" type="button">导出备份</button>
+        <button id="importBtn" class="secondary-btn" type="button">导入备份</button>
+      </div>
+    </header>
+
+    <div id="appNotice" class="status-banner" aria-live="polite"></div>
+
+    <section class="meta-strip panel panel-soft">
+      <div id="statusMetaText" class="meta-item">本地自动保存已就绪</div>
+    </section>
+
+    <main class="focus-grid">
+      <section class="panel today-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">今天</p>
+            <h2 id="todayDisplayDate">--</h2>
+            <p id="todaySummaryText" class="head-copy">今天的任务摘要会显示在这里。</p>
+          </div>
+          <div class="today-rate-card">
+            <span>今日完成率</span>
+            <strong id="heroTodayRate">0%</strong>
+            <small>优先看今天，不被次要信息打断</small>
+          </div>
+        </div>
+
+        <div id="todaySummaryChips" class="summary-chip-grid"></div>
+
+        <div class="action-row">
+          <button id="copyYesterdayBtn" class="secondary-btn" type="button">复制昨日未完成到今天</button>
+          <button id="jumpTodayBtn" class="secondary-btn" type="button">回到今天</button>
+          <button id="loadSampleBtn" class="secondary-btn" type="button">载入示例数据</button>
+        </div>
+      </section>
+
+      <section class="panel quick-capture-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">快速录入</p>
+            <h2>先输入，再预览，再生成</h2>
+          </div>
+          <span class="head-tip">默认优先面向今天</span>
+        </div>
+
+        <div class="capture-primary-row">
+          <label class="field">
+            <span>计划日期</span>
+            <input id="plannerDate" type="date">
+          </label>
+        </div>
+
+        <label class="field textarea-field">
+          <span>晨间事项输入</span>
+          <textarea id="batchInput" rows="7" placeholder="示例：
+09:00 跟进客户报价 | 工作 | 先确认合同
+整理报销资料 | 财务 | 16:30 | 核对发票和截图
+07:30 晨跑 30 分钟 | 健康"></textarea>
+        </label>
+
+        <div class="inline-note">支持 `09:00 任务标题 | 分类 | 备注` 和 `任务标题 | 分类 | 16:30 | 备注`。</div>
+
+        <details id="captureOptionsDetails" class="fold-panel compact-fold">
+          <summary>录入选项</summary>
+          <div class="defaults-grid">
+            <label class="field">
+              <span>默认分类</span>
+              <select id="defaultCategory">
+                <option value="工作">工作</option>
+                <option value="健康">健康</option>
+                <option value="家庭">家庭</option>
+                <option value="学习">学习</option>
+                <option value="财务">财务</option>
+                <option value="其他">其他</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>默认优先级</span>
+              <select id="defaultPriority">
+                <option value="高">高</option>
+                <option value="中" selected>中</option>
+                <option value="低">低</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>默认提醒时间</span>
+              <input id="defaultReminderTime" type="time" value="08:30">
+            </label>
+            <label class="field">
+              <span>重复模板</span>
+              <select id="defaultRepeat">
+                <option value="none" selected>不重复</option>
+                <option value="daily">每日</option>
+                <option value="weekly">每周</option>
+                <option value="monthly">每月</option>
+              </select>
+            </label>
+          </div>
+        </details>
+
+        <div class="action-row">
+          <button id="generateTasksBtn" class="primary-btn" type="button">生成今日代办</button>
+          <button id="clearInputBtn" class="secondary-btn" type="button">清空输入框</button>
+        </div>
+
+        <section id="batchPreviewPanel" class="preview-panel is-hidden" aria-live="polite">
+          <div class="preview-head">
+            <div>
+              <p class="section-kicker">解析预览</p>
+              <h3>预览本次将生成的任务</h3>
+            </div>
+            <div id="batchPreviewSummary" class="preview-summary">尚未解析。</div>
+          </div>
+          <div class="preview-groups">
+            <section class="preview-group">
+              <div class="preview-group-head">
+                <h4>可导入项</h4>
+                <span id="batchValidMeta" class="head-tip">0 条</span>
+              </div>
+              <div id="batchValidList" class="preview-list"></div>
+            </section>
+            <section class="preview-group">
+              <div class="preview-group-head">
+                <h4>错误项</h4>
+                <span id="batchErrorMeta" class="head-tip">0 条</span>
+              </div>
+              <div id="batchErrorList" class="preview-list"></div>
+            </section>
+          </div>
+          <div class="action-row preview-actions">
+            <button id="confirmPreviewBtn" class="primary-btn" type="button">只导入正确项</button>
+            <button id="cancelPreviewBtn" class="secondary-btn" type="button">返回修改</button>
+          </div>
+        </section>
+
+        <details id="singleTaskDetails" class="fold-panel fold-panel-form quick-form">
+          <summary>单条补充</summary>
+          <form id="quickTaskForm">
+            <div class="quick-form-grid">
+              <label class="field field-wide">
+                <span>任务标题</span>
+                <input id="singleTitle" type="text" placeholder="例如：给家人买感冒药" required>
+              </label>
+              <label class="field">
+                <span>提醒时间</span>
+                <input id="singleReminderTime" type="time">
+              </label>
+              <label class="field">
+                <span>分类</span>
+                <select id="singleCategory">
+                  <option value="工作">工作</option>
+                  <option value="健康">健康</option>
+                  <option value="家庭">家庭</option>
+                  <option value="学习">学习</option>
+                  <option value="财务">财务</option>
+                  <option value="其他" selected>其他</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>优先级</span>
+                <select id="singlePriority">
+                  <option value="高">高</option>
+                  <option value="中" selected>中</option>
+                  <option value="低">低</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>重复模板</span>
+                <select id="singleRepeat">
+                  <option value="none" selected>不重复</option>
+                  <option value="daily">每日</option>
+                  <option value="weekly">每周</option>
+                  <option value="monthly">每月</option>
+                </select>
+              </label>
+              <label class="field field-wide">
+                <span>备注</span>
+                <input id="singleNotes" type="text" placeholder="可选，例如：顺路去药店">
+              </label>
+            </div>
+            <div class="action-row">
+              <button class="primary-btn" type="submit">添加单条任务</button>
+            </div>
+          </form>
+        </details>
+      </section>
+
+      <section class="panel today-tasks-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">今日任务</p>
+            <h2>先看概览，再跳转到下方编辑</h2>
+          </div>
+          <span id="todayTaskCount" class="head-tip">0 项</span>
+        </div>
+        <div id="todayTaskList" class="task-list compact-list"></div>
+      </section>
+    </main>
+
+    <section class="content-grid">
+      <section class="panel tasks-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">任务清单</p>
+            <h2>统一处理今天和后续任务</h2>
+            <p id="taskPanelHint" class="task-panel-hint">这里统一处理状态、进度和备注。</p>
+          </div>
+        </div>
+
+        <div class="task-filter-shell">
+          <div class="task-filter-primary">
+            <div id="taskFilters" class="filter-row" role="toolbar" aria-label="任务筛选">
+              <button class="filter-chip is-active" data-filter="today" type="button" aria-pressed="true">今天</button>
+              <button class="filter-chip" data-filter="selected" type="button" aria-pressed="false">选中日期</button>
+              <button class="filter-chip" data-filter="all" type="button" aria-pressed="false">全部</button>
+              <button class="filter-chip" data-filter="open" type="button" aria-pressed="false">未完成</button>
+              <button class="filter-chip" data-filter="done" type="button" aria-pressed="false">已完成</button>
+              <button class="filter-chip" data-filter="overdue" type="button" aria-pressed="false">逾期</button>
+            </div>
+            <span id="taskResultMeta" class="task-result-meta">今天 · 0 条</span>
+          </div>
+
+          <div class="filter-more">
+            <button id="filterMoreToggle" class="filter-more-toggle" type="button" aria-expanded="false" aria-controls="filterMorePanel" aria-hidden="true" tabindex="-1" hidden>
+              更多筛选
+            </button>
+            <div id="filterMorePanel" class="filter-toolbar">
+              <label class="field compact-field">
+                <span>分类筛选</span>
+                <select id="categoryFilter">
+                  <option value="all">全部分类</option>
+                  <option value="工作">工作</option>
+                  <option value="健康">健康</option>
+                  <option value="家庭">家庭</option>
+                  <option value="学习">学习</option>
+                  <option value="财务">财务</option>
+                  <option value="其他">其他</option>
+                </select>
+              </label>
+              <label class="field compact-field">
+                <span>优先级筛选</span>
+                <select id="priorityFilter">
+                  <option value="all">全部优先级</option>
+                  <option value="高">高</option>
+                  <option value="中">中</option>
+                  <option value="低">低</option>
+                </select>
+              </label>
+              <label class="field search-field">
+                <span>关键词搜索</span>
+                <input id="taskSearchInput" type="search" placeholder="搜索标题、备注、分类">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div id="taskList" class="task-list"></div>
+      </section>
+
+      <aside class="panel side-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">侧边信息</p>
+            <h2>查看提醒与重点跟进</h2>
+          </div>
+        </div>
+        <div id="sideTabs" class="tab-row" role="tablist" aria-label="侧边内容切换">
+          <button id="sideTabTimeline" class="tab-chip is-active" data-side-tab="timeline" type="button" role="tab" aria-controls="timelinePanel" aria-selected="true">今天提醒</button>
+          <button id="sideTabPending" class="tab-chip" data-side-tab="pending" type="button" role="tab" aria-controls="pendingPanel" aria-selected="false">重点跟进</button>
+        </div>
+        <div class="side-panel-body">
+          <section id="timelinePanel" class="side-section" role="tabpanel" aria-labelledby="sideTabTimeline">
+            <div id="timelineList" class="timeline-list"></div>
+          </section>
+          <section id="pendingPanel" class="side-section is-hidden" role="tabpanel" aria-labelledby="sideTabPending" hidden>
+            <div id="pendingList" class="pending-list"></div>
+          </section>
+        </div>
+      </aside>
+    </section>
+
+    <section class="work-grid">
+      <section class="panel calendar-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">任务日历</p>
+            <h2 id="calendarTitle">--</h2>
+          </div>
+          <div class="month-controls">
+            <button id="prevMonthBtn" class="icon-btn" type="button" aria-label="上个月">‹</button>
+            <button id="nextMonthBtn" class="icon-btn" type="button" aria-label="下个月">›</button>
+          </div>
+        </div>
+
+        <div class="calendar-focus-strip">
+          <div>
+            <span class="focus-label">当前查看日期</span>
+            <strong id="selectedDateLabel">--</strong>
+          </div>
+          <div id="selectedDateSummary" class="focus-summary">这里会显示所选日期的任务分布和完成情况。</div>
+        </div>
+
+        <div class="calendar-weekdays">
+          <span>一</span>
+          <span>二</span>
+          <span>三</span>
+          <span>四</span>
+          <span>五</span>
+          <span>六</span>
+          <span>日</span>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <aside class="panel summary-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">统计概览</p>
+            <h2>查看周 / 月 / 年完成情况</h2>
+          </div>
+        </div>
+
+        <div id="summaryCards" class="summary-cards"></div>
+
+        <div class="mini-stack">
+          <div class="mini-panel">
+            <h3>提醒</h3>
+            <p id="notificationState">浏览器提醒未开启，页面仍可正常保存和统计。</p>
+          </div>
+          <div class="mini-panel">
+            <h3>保存</h3>
+            <p id="storageMeta" class="muted-text">本地存储信息会显示在这里。</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel analytics-panel">
+      <div class="panel-head">
+        <div>
+          <p class="section-kicker">统计表</p>
+          <h2>辅助统计信息</h2>
+        </div>
+      </div>
+      <details id="statsDetails" class="fold-panel">
+        <summary>查看详细统计表</summary>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>统计周期</th>
+                <th>总任务数</th>
+                <th>已完成数</th>
+                <th>进行中数</th>
+                <th>未开始数</th>
+                <th>逾期数</th>
+                <th>平均进度</th>
+                <th>完成率</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="panel backup-panel panel-soft">
+      <div class="panel-head">
+        <div>
+          <p class="section-kicker">长期保存与恢复</p>
+          <h2>备份与恢复</h2>
+        </div>
+      </div>
+      <details id="backupDetails" class="fold-panel">
+        <summary>展开备份与恢复选项</summary>
+        <div class="backup-grid">
+          <div class="backup-card">
+            <h3>当前保存方式</h3>
+            <p>数据默认保存在当前浏览器本地存储中，关闭网页后仍会保留。</p>
+          </div>
+          <div class="backup-card">
+            <h3>导出与导入</h3>
+            <p>建议定期导出 JSON 备份，并和整个网页文件夹一起长期保存。</p>
+          </div>
+          <div class="backup-card">
+            <h3>清空前保护</h3>
+            <p>清空全部任务前会再次确认，降低误操作风险。</p>
+          </div>
+        </div>
+        <div class="action-row">
+          <button id="clearAllBtn" class="danger-btn" type="button">清空当前所有任务</button>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <input id="importFileInput" type="file" accept="application/json" hidden>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

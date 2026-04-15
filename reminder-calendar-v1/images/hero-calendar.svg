@@ -1,0 +1,35 @@
+<svg width="960" height="640" viewBox="0 0 960 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="640" rx="44" fill="#FBF7EF"/>
+  <rect x="48" y="48" width="864" height="544" rx="36" fill="#FFFDF8" stroke="#E4D8C2" stroke-width="4"/>
+  <rect x="84" y="96" width="428" height="420" rx="24" fill="#F3E9D5"/>
+  <rect x="84" y="96" width="428" height="88" rx="24" fill="#2D6A4F"/>
+  <circle cx="134" cy="140" r="12" fill="#F5DFB3"/>
+  <circle cx="178" cy="140" r="12" fill="#F5DFB3"/>
+  <circle cx="222" cy="140" r="12" fill="#F5DFB3"/>
+  <g fill="#FFFDF8" opacity="0.95">
+    <rect x="116" y="222" width="76" height="64" rx="14"/>
+    <rect x="206" y="222" width="76" height="64" rx="14"/>
+    <rect x="296" y="222" width="76" height="64" rx="14"/>
+    <rect x="386" y="222" width="76" height="64" rx="14"/>
+    <rect x="116" y="300" width="76" height="64" rx="14"/>
+    <rect x="206" y="300" width="76" height="64" rx="14"/>
+    <rect x="296" y="300" width="76" height="64" rx="14" fill="#DCEEDD"/>
+    <rect x="386" y="300" width="76" height="64" rx="14"/>
+    <rect x="116" y="378" width="76" height="64" rx="14"/>
+    <rect x="206" y="378" width="76" height="64" rx="14"/>
+    <rect x="296" y="378" width="76" height="64" rx="14"/>
+    <rect x="386" y="378" width="76" height="64" rx="14"/>
+  </g>
+  <rect x="560" y="108" width="308" height="136" rx="26" fill="#EEF6EE"/>
+  <rect x="560" y="272" width="308" height="120" rx="26" fill="#FFF3DB"/>
+  <rect x="560" y="418" width="308" height="122" rx="26" fill="#FFFDF8" stroke="#E4D8C2" stroke-width="3"/>
+  <rect x="592" y="150" width="170" height="18" rx="9" fill="#2D6A4F" opacity="0.18"/>
+  <rect x="592" y="182" width="232" height="18" rx="9" fill="#2D6A4F" opacity="0.18"/>
+  <path d="M593 341C637 309 670 298 705 302C740 306 769 324 813 312" stroke="#D18D24" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="813" cy="312" r="14" fill="#D18D24"/>
+  <rect x="594" y="456" width="178" height="18" rx="9" fill="#2D6A4F" opacity="0.15"/>
+  <rect x="594" y="488" width="230" height="18" rx="9" fill="#2D6A4F" opacity="0.15"/>
+  <rect x="594" y="520" width="122" height="18" rx="9" fill="#2D6A4F" opacity="0.15"/>
+  <circle cx="339" cy="332" r="22" fill="#2D6A4F"/>
+  <path d="M329 333L337 341L352 321" stroke="#FFFDF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

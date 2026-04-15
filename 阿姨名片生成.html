@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>海南佳缘家政阿姨名片生成器</title>
+  <style>
+    :root {
+      --bg-deep: #0e4d56;
+      --bg-mid: #176e78;
+      --bg-soft: #f8ecdb;
+      --panel: rgba(252, 248, 242, 0.9);
+      --panel-strong: rgba(255, 251, 246, 0.96);
+      --line: rgba(13, 61, 68, 0.12);
+      --text: #15353b;
+      --muted: rgba(21, 53, 59, 0.7);
+      --brand: #e27d52;
+      --brand-deep: #c95c33;
+      --gold: #d4ab52;
+      --shadow: 0 28px 60px rgba(8, 39, 44, 0.18);
+      --radius-xl: 34px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --page-width: 1380px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 12%, rgba(255, 255, 255, 0.16), transparent 18%),
+        radial-gradient(circle at 88% 14%, rgba(226, 125, 82, 0.22), transparent 18%),
+        radial-gradient(circle at 15% 85%, rgba(212, 171, 82, 0.18), transparent 20%),
+        linear-gradient(145deg, #0b424a 0%, var(--bg-mid) 44%, #16505b 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 999px;
+      filter: blur(14px);
+      opacity: 0.7;
+    }
+
+    body::before {
+      width: 320px;
+      height: 320px;
+      top: -120px;
+      right: -80px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    body::after {
+      width: 280px;
+      height: 280px;
+      left: -60px;
+      bottom: 40px;
+      background: rgba(226, 125, 82, 0.16);
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(calc(100% - 28px), var(--page-width));
+      margin: 0 auto;
+      padding: 24px 0 36px;
+    }
+
+    .hero-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      padding: 24px 28px;
+      border-radius: var(--radius-xl);
+      background: rgba(255, 252, 247, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 18px 50px rgba(5, 27, 30, 0.14);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand-block {
+      display: grid;
+      gap: 10px;
+      max-width: 760px;
+    }
+
+    .brand-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      width: fit-content;
+      border-radius: 999px;
+      color: #fff8ef;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--gold));
+      box-shadow: 0 12px 22px rgba(226, 125, 82, 0.32);
+    }
+
+    .hero-bar h1 {
+      margin: 0;
+      color: #fff8ef;
+      font-family: "Source Han Serif SC", "Songti SC", "STSong", serif;
+      font-size: clamp(28px, 4vw, 46px);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .hero-bar p {
+      margin: 0;
+      max-width: 700px;
+      color: rgba(255, 248, 239, 0.82);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    .hero-note {
+      min-width: 250px;
+      padding: 18px 20px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(255, 248, 239, 0.88);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: 22px;
+      margin-top: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .controls-panel {
+      padding: 24px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .panel-head h2,
+    .preview-head h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .panel-head p,
+    .preview-head p,
+    .panel-footnote,
+    .preview-note,
+    .status {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-wide {
+      grid-column: 1 / -1;
+    }
+
+    .field label,
+    .field-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px 14px;
+      font: inherit;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.72);
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+    }
+
+    textarea {
+      min-height: 104px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+
+    #rawProfile {
+      min-height: 260px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(14, 109, 120, 0.42);
+      box-shadow: 0 0 0 4px rgba(23, 110, 120, 0.12);
+      background: #fff;
+    }
+
+    .upload-box {
+      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(22, 110, 120, 0.08), rgba(226, 125, 82, 0.08));
+      border: 1px dashed rgba(21, 53, 59, 0.18);
+    }
+
+    .upload-box input[type="file"] {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .upload-tip {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+      box-shadow: 0 16px 28px rgba(201, 92, 51, 0.24);
+    }
+
+    .button-secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .button-ghost {
+      color: var(--bg-mid);
+      background: rgba(23, 110, 120, 0.08);
+    }
+
+    .panel-footnote {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px solid rgba(13, 61, 68, 0.08);
+    }
+
+    .panel-footnote strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .preview-panel {
+      padding: 24px;
+      min-height: 100%;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .preview-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .preview-frame {
+      padding: 18px;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.26), transparent 22%),
+        linear-gradient(165deg, rgba(12, 73, 81, 0.94), rgba(19, 91, 99, 0.94));
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    #card-canvas {
+      width: 100%;
+      display: block;
+      height: auto;
+      border-radius: 26px;
+      background: #0f525c;
+    }
+
+    .preview-meta {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      font-size: 14px;
+    }
+
+    .preview-note {
+      font-size: 14px;
+    }
+
+    @media (max-width: 1180px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .controls-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(calc(100% - 18px), var(--page-width));
+        padding-top: 14px;
+      }
+
+      .hero-bar,
+      .controls-panel,
+      .preview-panel {
+        padding: 20px;
+      }
+
+      .hero-bar,
+      .panel-head,
+      .preview-head {
+        flex-direction: column;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field-wide {
+        grid-column: auto;
+      }
+
+      .preview-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero-bar">
+      <div class="brand-block">
+        <div class="brand-kicker">
+          <span class="brand-mark">佳</span>
+          海南佳缘家政服务有限公司
+        </div>
+        <h1>阿姨个人名片生成器</h1>
+        <p>
+          录入阿姨简历信息并上传照片，即可生成统一品牌风格的专属名片图片。页面会实时更新预览，
+          导出后可直接用于微信发送、朋友圈展示、客户介绍或打印。
+        </p>
+      </div>
+      <div class="hero-note">
+        名片模板已固定为“海南佳缘家政服务有限公司”品牌视觉。
+        后续如果你要继续做批量导入、自动排版多模板或加二维码，也可以在这个页面基础上继续扩展。
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel controls-panel">
+        <div class="panel-head">
+          <div>
+            <h2>资料录入</h2>
+            <p>左侧填写信息，右侧即时生成阿姨名片。</p>
+          </div>
+        </div>
+
+        <form id="profile-form" class="form-grid">
+          <div class="field field-wide">
+            <label for="rawProfile">原始简历资料</label>
+            <textarea id="rawProfile" name="rawProfile" placeholder="直接粘贴阿姨完整资料，点击“自动提炼资料”即可">姓名：苏小花
+紧急联系人姓名及电话：待补充
+籍贯：海南
+现居地：万宁
+年龄：42
+学历：中专
+身高：161
+体重：142
+民族：汉
+属相：鼠
+是否有健康证：有
+所持有的证书：无
+工作经历：7年家政，带过一个女宝到走路，带过一个男宝7个月到3岁
+性格评价：温柔善良，眼里有活，爱宝宝
+技能方面：做饭，做卫生，带宝宝
+擅长菜品：海南菜，海鲜
+家庭情况：有一儿一女
+是否有重大疾病史或传染病：无</textarea>
+          </div>
+
+          <div class="field">
+            <label for="name">阿姨姓名</label>
+            <input id="name" name="name" placeholder="自动提炼后生成" />
+          </div>
+
+          <div class="field">
+            <label for="employeeId">阿姨编号</label>
+            <input id="employeeId" name="employeeId" placeholder="自动生成，例如：HN-JY-286" />
+          </div>
+
+          <div class="field">
+            <label for="level">服务等级</label>
+            <select id="level" name="level">
+              <option value="金牌">金牌</option>
+              <option value="优选" selected>优选</option>
+              <option value="资深">资深</option>
+              <option value="安心">安心</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="serviceType">岗位类型</label>
+            <input id="serviceType" name="serviceType" placeholder="例如：住家育儿嫂" />
+          </div>
+
+          <div class="field">
+            <label for="age">年龄</label>
+            <input id="age" name="age" placeholder="例如：42岁" />
+          </div>
+
+          <div class="field">
+            <label for="experience">从业经验</label>
+            <input id="experience" name="experience" placeholder="例如：7年" />
+          </div>
+
+          <div class="field">
+            <label for="nativePlace">籍贯</label>
+            <input id="nativePlace" name="nativePlace" placeholder="例如：海南文昌" />
+          </div>
+
+          <div class="field">
+            <label for="currentResidence">现居地</label>
+            <input id="currentResidence" name="currentResidence" placeholder="例如：万宁" />
+          </div>
+
+          <div class="field">
+            <label for="ethnicity">民族</label>
+            <input id="ethnicity" name="ethnicity" placeholder="例如：汉" />
+          </div>
+
+          <div class="field">
+            <label for="height">身高</label>
+            <input id="height" name="height" placeholder="例如：161cm" />
+          </div>
+
+          <div class="field">
+            <label for="weight">体重</label>
+            <input id="weight" name="weight" placeholder="例如：142斤" />
+          </div>
+
+          <div class="field">
+            <label for="zodiac">属相</label>
+            <input id="zodiac" name="zodiac" placeholder="例如：鼠" />
+          </div>
+
+          <div class="field">
+            <label for="healthCert">健康证</label>
+            <select id="healthCert" name="healthCert">
+              <option value="">待补充</option>
+              <option value="有">有</option>
+              <option value="无">无</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="familyStatus">家庭情况</label>
+            <input id="familyStatus" name="familyStatus" placeholder="例如：有一儿一女" />
+          </div>
+
+          <div class="field">
+            <label for="serviceCity">服务区域</label>
+            <input id="serviceCity" name="serviceCity" placeholder="例如：万宁及周边可接单" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="emergencyContact">紧急联系人</label>
+            <input id="emergencyContact" name="emergencyContact" placeholder="内部资料使用，默认不展示到名片" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="diseaseHistory">重大疾病史或传染病情况</label>
+            <input id="diseaseHistory" name="diseaseHistory" placeholder="例如：无" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="motto">服务宣言</label>
+            <input id="motto" name="motto" placeholder="根据简历自动生成，可再微调" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="services">服务项目</label>
+            <input id="services" name="services" placeholder="自动提炼后生成，例如：宝宝照护，家常做饭，日常保洁" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="specialties">个人亮点</label>
+            <input id="specialties" name="specialties" placeholder="自动提炼后生成，例如：温和亲切，主动勤快，亲和爱宝宝" />
+          </div>
+
+          <div class="field field-wide">
+            <label for="intro">个人简介</label>
+            <textarea id="intro" name="intro" placeholder="根据原始资料自动生成，可继续修改"></textarea>
+          </div>
+
+          <div class="field field-wide">
+            <label for="contactLine">底部联系文案</label>
+            <input id="contactLine" name="contactLine" value="预约阿姨面试及上户请联系 13215803888。" placeholder="例如：预约阿姨面试及上户请联系 13215803888。" />
+          </div>
+
+          <div class="field field-wide">
+            <div class="field-title">阿姨照片</div>
+            <div class="upload-box">
+              <input id="photo" name="photo" type="file" accept="image/*" />
+              <div class="upload-tip">建议上传清晰竖版照片或半身照，支持 JPG、PNG、WebP。</div>
+            </div>
+          </div>
+        </form>
+
+        <div class="button-row">
+          <button class="button-primary" id="parse-btn" type="button">自动提炼资料</button>
+          <button class="button-secondary" id="sample-btn" type="button">恢复示例内容</button>
+          <button class="button-ghost" id="clear-photo-btn" type="button">清空照片</button>
+        </div>
+
+        <div class="panel-footnote">
+          <strong>使用方式</strong>
+          以后你只需要直接粘贴一整段阿姨资料，系统会自动拆出基础信息，并生成更适合名片展示的亮点、服务项目、服务宣言和简介。紧急联系人、疾病史这类内部资料默认不会展示在对外名片上。
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="preview-head">
+          <div>
+            <h2 id="preview-title">实时名片预览</h2>
+            <p>统一品牌模板，导出即为图片。</p>
+          </div>
+          <div class="preview-actions">
+            <button class="button-primary" id="download-btn" type="button">导出 PNG</button>
+          </div>
+        </div>
+
+        <div class="preview-frame">
+          <canvas id="card-canvas" width="1080" height="1660"></canvas>
+        </div>
+
+        <div class="preview-meta">
+          <p class="preview-note">导出尺寸：1080 × 1660，适合手机传播与客户展示。</p>
+          <p class="status" id="status">已支持从一整段简历自动提炼文案，未上传照片时会自动显示占位头像。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById("profile-form");
+    const canvas = document.getElementById("card-canvas");
+    const ctx = canvas.getContext("2d");
+    const photoInput = document.getElementById("photo");
+    const previewTitle = document.getElementById("preview-title");
+    const statusEl = document.getElementById("status");
+    const downloadBtn = document.getElementById("download-btn");
+    const sampleBtn = document.getElementById("sample-btn");
+    const clearPhotoBtn = document.getElementById("clear-photo-btn");
+    const parseBtn = document.getElementById("parse-btn");
+    const rawProfileInput = document.getElementById("rawProfile");
+
+    const fieldDefinitions = [
+      { field: "name", labels: ["阿姨姓名", "姓名"] },
+      { field: "emergencyContact", labels: ["紧急联系人姓名及电话", "紧急联系人电话", "紧急联系人"] },
+      { field: "nativePlace", labels: ["籍贯"] },
+      { field: "currentResidence", labels: ["现居地", "现住地", "居住地"] },
+      { field: "age", labels: ["年龄"] },
+      { field: "education", labels: ["学历"] },
+      { field: "height", labels: ["身高"] },
+      { field: "weight", labels: ["体重"] },
+      { field: "ethnicity", labels: ["民族"] },
+      { field: "zodiac", labels: ["属相", "生肖"] },
+      { field: "healthCert", labels: ["是否有健康证", "健康证"] },
+      { field: "certificates", labels: ["所持有的证书", "持有证书", "证书情况", "证书"] },
+      { field: "experience", labels: ["从业年限", "工作年限"] },
+      { field: "workExperienceText", labels: ["工作经历", "工作经验", "从业经历"] },
+      { field: "personality", labels: ["性格评价", "性格特点", "性格"] },
+      { field: "skills", labels: ["技能方面", "技能特长", "技能"] },
+      { field: "cuisine", labels: ["擅长菜品", "拿手菜品", "菜品", "菜系", "方菜品"] },
+      { field: "familyStatus", labels: ["家庭情况"] },
+      { field: "diseaseHistory", labels: ["是否有重大疾病史或传染病", "重大疾病史或传染病", "疾病史", "健康情况"] },
+      { field: "serviceCity", labels: ["服务区域", "服务地点", "服务城市"] },
+      { field: "serviceType", labels: ["岗位类型", "服务类型"] }
+    ];
+
+    const fieldMatchers = fieldDefinitions
+      .flatMap((definition) =>
+        definition.labels.map((label) => ({
+          field: definition.field,
+          label
+        }))
+      )
+      .sort((left, right) => right.label.length - left.label.length);
+
+    const state = {
+      photoImage: null,
+      companyLogoImage: null
+    };
+
+    const companyLogoSvg = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="220 0 210 260">
+      <g transform="translate(0,8)">
+        <circle cx="320" cy="96" r="86" fill="none" stroke="#47a6f2" stroke-width="10"/>
+        <path d="M292 40c-30 12-45 49-30 77 8 15 22 25 32 37 16 18 18 51-17 88l-8 8c1-20-4-30-18-39 27-17 41-42 39-67-2-24-20-43-15-69 5-26 28-43 55-43 37 0 60 29 60 61 0 25-12 44-15 66-4 31 5 58 21 85-34-8-60-25-67-54-6-25 6-44-6-74-6-16-16-30-31-36z" fill="#47a6f2"/>
+        <circle cx="292" cy="76" r="12" fill="#47a6f2"/>
+        <path d="M360 66c18 7 29 27 27 46-1 14-10 27-8 43 2 24 23 41 48 47l-5 18c-37-7-72-28-84-64-7-22-1-43 1-60 2-17-5-28-17-36 13 0 25 1 38 6z" fill="#47a6f2"/>
+        <path d="M387 124c9 0 17 4 23 9 7-2 13-5 21-4-8 5-15 9-24 10-7 1-14-3-20-15z" fill="#47a6f2"/>
+      </g>
+    </svg>`;
+
+    function escapeRegExp(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function cleanValue(value) {
+      return String(value || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/^[：:\-]\s*/, "")
+        .trim();
+    }
+
+    function dedupe(items) {
+      return items.filter((item, index) => item && items.indexOf(item) === index);
+    }
+
+    function splitList(value) {
+      const items = String(value || "")
+        .split(/[，,、；;\n]/)
+        .map((item) => cleanValue(item))
+        .filter(Boolean);
+
+      if (items.length === 1 && /^(无|没有|暂无|未持有|未办理|未提供)$/.test(items[0])) {
+        return [];
+      }
+
+      return dedupe(items).slice(0, 8);
+    }
+
+    function getField(name) {
+      return form.elements[name] ? cleanValue(form.elements[name].value) : "";
+    }
+
+    function setField(name, value) {
+      if (!form.elements[name]) {
+        return;
+      }
+
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return;
+      }
+
+      form.elements[name].value = normalized;
+    }
+
+    function clearFields(names) {
+      names.forEach((name) => {
+        if (!form.elements[name]) {
+          return;
+        }
+        form.elements[name].value = "";
+      });
+    }
+
+    function generateRandomEmployeeId() {
+      if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+        const buffer = new Uint32Array(1);
+        window.crypto.getRandomValues(buffer);
+        const number = 100 + (buffer[0] % 900);
+        return `HN-JY-${number}`;
+      }
+
+      const number = 100 + Math.floor(Math.random() * 900);
+      return `HN-JY-${number}`;
+    }
+
+    function normalizeAge(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      return /^\d{1,2}$/.test(normalized) ? `${normalized}岁` : normalized;
+    }
+
+    function normalizeExperience(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      return /^\d+(?:\.\d+)?$/.test(normalized) ? `${normalized}年` : normalized;
+    }
+
+    function normalizeHeight(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      return /^\d{2,3}$/.test(normalized) ? `${normalized}cm` : normalized;
+    }
+
+    function normalizeWeight(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      return /^\d{2,3}$/.test(normalized) ? `${normalized}斤` : normalized;
+    }
+
+    function normalizeYesNo(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      if (/(无|没有|未|否)/.test(normalized) && !/有/.test(normalized)) {
+        return "无";
+      }
+
+      if (/有|是/.test(normalized)) {
+        return "有";
+      }
+
+      return normalized;
+    }
+
+    function formatDiseaseHistory(value) {
+      const normalized = cleanValue(value);
+      if (!normalized) {
+        return "";
+      }
+
+      return normalizeYesNo(normalized) === "无" ? "无重大疾病史" : normalized;
+    }
+
+    function loadCompanyLogo() {
+      const image = new Image();
+      image.onload = () => {
+        state.companyLogoImage = image;
+        renderCard();
+      };
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(companyLogoSvg)}`;
+    }
+
+    function ensureSentence(value) {
+      const normalized = cleanValue(value).replace(/[。！？；，]+$/, "");
+      if (!normalized) {
+        return "";
+      }
+
+      return `${normalized}。`;
+    }
+
+    function joinDisplayBits(items) {
+      return items.filter(Boolean).join(" · ");
+    }
+
+    function parseRawProfile(text) {
+      const result = {};
+      const lines = String(text || "").replace(/\r/g, "").split("\n");
+      let currentField = "";
+
+      lines.forEach((rawLine) => {
+        const line = rawLine.replace(/^[•·*\-]\s*/, "").trim();
+        if (!line) {
+          return;
+        }
+
+        let matched = null;
+        for (const matcher of fieldMatchers) {
+          const regex = new RegExp(`^${escapeRegExp(matcher.label)}\\s*[：:]?\\s*(.*)$`);
+          const match = line.match(regex);
+          if (match) {
+            matched = {
+              field: matcher.field,
+              value: match[1]
+            };
+            break;
+          }
+        }
+
+        if (matched) {
+          currentField = matched.field;
+          const nextValue = cleanValue(matched.value);
+          if (nextValue) {
+            result[currentField] = result[currentField]
+              ? cleanValue(`${result[currentField]} ${nextValue}`)
+              : nextValue;
+          } else if (!result[currentField]) {
+            result[currentField] = "";
+          }
+          return;
+        }
+
+        if (currentField) {
+          result[currentField] = cleanValue(`${result[currentField] || ""} ${line}`);
+        }
+      });
+
+      return result;
+    }
+
+    function inferExperience(parsed) {
+      const explicit = normalizeExperience(parsed.experience);
+      if (explicit) {
+        return explicit;
+      }
+
+      const source = cleanValue(parsed.workExperienceText);
+      const match = source.match(/(\d+(?:\.\d+)?)\s*年/);
+      if (match) {
+        return `${match[1]}年`;
+      }
+
+      return "";
+    }
+
+    function inferServiceType(parsed) {
+      const explicit = cleanValue(parsed.serviceType);
+      if (explicit) {
+        return explicit;
+      }
+
+      const source = `${cleanValue(parsed.workExperienceText)} ${cleanValue(parsed.skills)}`;
+      if (/月嫂|月子|新生儿/.test(source)) {
+        return "月嫂";
+      }
+
+      if (/宝宝|婴|育儿|带娃|带宝/.test(source)) {
+        if (/做饭|做卫生|保洁|家务|收纳/.test(source)) {
+          return "住家育儿嫂";
+        }
+        return "育婴师";
+      }
+
+      if (/做饭|做菜|烹饪|卫生|保洁|家务/.test(source)) {
+        return "家务阿姨";
+      }
+
+      return "家政阿姨";
+    }
+
+    function inferServiceCity(parsed) {
+      const explicit = cleanValue(parsed.serviceCity);
+      if (explicit) {
+        return explicit;
+      }
+
+      const currentResidence = cleanValue(parsed.currentResidence);
+      if (currentResidence) {
+        return `${currentResidence}及周边可接单`;
+      }
+
+      const nativePlace = cleanValue(parsed.nativePlace);
+      if (nativePlace) {
+        return `${nativePlace}及周边可接单`;
+      }
+
+      return "海南省内可接单";
+    }
+
+    function buildServiceItems(parsed) {
+      const source = `${cleanValue(parsed.skills)} ${cleanValue(parsed.workExperienceText)} ${cleanValue(parsed.cuisine)}`;
+      const items = [];
+
+      if (/宝宝|带宝|带娃|育婴|育儿|婴幼儿/.test(source)) {
+        items.push("宝宝照护", "婴幼儿陪护");
+      }
+      if (/做饭|做菜|烹饪/.test(source)) {
+        items.push("家常做饭");
+      }
+      if (/卫生|保洁|清洁/.test(source)) {
+        items.push("日常保洁");
+      }
+      if (/家务|整理|收纳/.test(source)) {
+        items.push("家务整理");
+      }
+      if (/辅食/.test(source)) {
+        items.push("辅食制作");
+      }
+      if (/海南菜/.test(source)) {
+        items.push("海南家常菜");
+      }
+      if (/海鲜/.test(source)) {
+        items.push("海鲜烹饪");
+      }
+
+      return dedupe(items).slice(0, 6);
+    }
+
+    function buildSpecialties(parsed, experience) {
+      const source = `${cleanValue(parsed.personality)} ${cleanValue(parsed.skills)} ${cleanValue(parsed.workExperienceText)} ${cleanValue(parsed.familyStatus)}`;
+      const items = [];
+
+      if (/温柔|温和|善良/.test(source)) {
+        items.push("温和亲切");
+      }
+      if (/耐心|爱宝宝|喜欢宝宝/.test(source)) {
+        items.push("亲和爱宝宝", "带娃有耐心");
+      }
+      if (/眼里有活|勤快|麻利|主动/.test(source)) {
+        items.push("主动勤快");
+      }
+      if (/做饭/.test(source)) {
+        items.push("做饭利索");
+      }
+      if (/卫生|保洁/.test(source)) {
+        items.push("卫生细致");
+      }
+      if (/女宝|男宝|宝宝|走路|3岁/.test(source)) {
+        items.push("带娃衔接稳定");
+      }
+      if (/一儿一女|有儿有女|儿子|女儿/.test(source)) {
+        items.push("有家庭育儿经验");
+      }
+      if (parseFloat(experience) >= 5) {
+        items.push("家政经验扎实");
+      }
+
+      if (!items.length) {
+        items.push("沟通顺畅", "做事稳妥");
+      }
+
+      return dedupe(items).slice(0, 6);
+    }
+
+    function buildCertificates(parsed) {
+      const items = splitList(parsed.certificates);
+      const healthCert = normalizeYesNo(parsed.healthCert);
+
+      if (healthCert === "有" && !items.some((item) => /健康证/.test(item))) {
+        items.unshift("健康证");
+      }
+
+      if (!items.length) {
+        items.push("暂无专项证书");
+      }
+
+      return dedupe(items).slice(0, 6);
+    }
+
+    function buildMotto(parsed, specialties, serviceType) {
+      const personality = cleanValue(parsed.personality);
+      const skillSource = cleanValue(parsed.skills);
+
+      if (/宝宝|带娃|育儿|育婴/.test(`${skillSource} ${serviceType}`)) {
+        if (/温柔|温和|善良|耐心/.test(personality)) {
+          return "温柔耐心，带娃细致，也把家里照顾得清爽稳妥。";
+        }
+        return "带娃细致，做事利索，让宝宝和家庭都更省心。";
+      }
+
+      if (/眼里有活|勤快|麻利/.test(personality)) {
+        return "做事主动麻利，服务有分寸，让家庭生活更轻松。";
+      }
+
+      if (specialties.length) {
+        return `${specialties.slice(0, 2).join("，")}，把服务做到让人放心。`;
+      }
+
+      return "服务认真细致，把家庭日常照顾得稳稳当当。";
+    }
+
+    function buildIntro(parsed, derived) {
+      const sentences = [];
+      const workExperienceText = cleanValue(parsed.workExperienceText)
+        .replace(/[~～]/g, "至")
+        .replace(/\s+/g, "");
+      const personality = cleanValue(parsed.personality);
+      const skillItems = splitList(parsed.skills);
+      const cuisineItems = splitList(parsed.cuisine);
+      const familyStatus = cleanValue(parsed.familyStatus);
+      const healthCert = normalizeYesNo(parsed.healthCert);
+      const diseaseHistory = formatDiseaseHistory(parsed.diseaseHistory);
+
+      if (derived.experience) {
+        if (workExperienceText) {
+          const cleanedExperience = workExperienceText.replace(/^\d+(?:\.\d+)?年家政[，,]?/, "");
+          if (cleanedExperience) {
+            sentences.push(`从事家政服务${derived.experience}，${cleanedExperience}`);
+          } else {
+            sentences.push(`从事家政服务${derived.experience}，服务经验较为扎实`);
+          }
+        } else {
+          sentences.push(`从事家政服务${derived.experience}，服务经验较为扎实`);
+        }
+      } else if (workExperienceText) {
+        sentences.push(workExperienceText);
+      }
+
+      const abilityParts = [];
+      if (personality) {
+        abilityParts.push(personality);
+      }
+      if (skillItems.length) {
+        abilityParts.push(`能兼顾${skillItems.join("、")}`);
+      }
+      if (cuisineItems.length) {
+        abilityParts.push(`擅长${cuisineItems.join("、")}`);
+      }
+      if (abilityParts.length) {
+        sentences.push(`阿姨${abilityParts.join("，")}`);
+      }
+
+      if (familyStatus) {
+        sentences.push(`家庭情况${familyStatus}，家庭观念稳定`);
+      }
+
+      const healthParts = [];
+      if (healthCert === "有") {
+        healthParts.push("持有健康证");
+      }
+      if (diseaseHistory) {
+        if (diseaseHistory === "无重大疾病史") {
+          healthParts.push("无重大疾病史或传染病");
+        } else {
+          healthParts.push(`健康情况${diseaseHistory}`);
+        }
+      }
+      if (healthParts.length) {
+        sentences.push(healthParts.join("，"));
+      }
+
+      const intro = sentences.map((item) => ensureSentence(item)).join("");
+      return intro || "请补充阿姨个人简介。";
+    }
+
+    function deriveProfile(parsed) {
+      const experience = inferExperience(parsed);
+      const serviceType = inferServiceType(parsed);
+      const serviceCity = inferServiceCity(parsed);
+      const services = buildServiceItems(parsed);
+      const specialties = buildSpecialties(parsed, experience);
+      const certificates = buildCertificates(parsed);
+      const motto = buildMotto(parsed, specialties, serviceType);
+      const intro = buildIntro(parsed, {
+        experience,
+        serviceType,
+        specialties,
+        services,
+        certificates
+      });
+
+      return {
+        experience,
+        serviceType,
+        serviceCity,
+        services,
+        specialties,
+        certificates,
+        motto,
+        intro
+      };
+    }
+
+    function applyParsedProfile(parsed) {
+      const derived = deriveProfile(parsed);
+
+      clearFields([
+        "employeeId",
+        "name",
+        "age",
+        "experience",
+        "nativePlace",
+        "currentResidence",
+        "education",
+        "height",
+        "weight",
+        "ethnicity",
+        "zodiac",
+        "healthCert",
+        "familyStatus",
+        "emergencyContact",
+        "diseaseHistory",
+        "serviceType",
+        "serviceCity",
+        "motto",
+        "services",
+        "specialties",
+        "certificates",
+        "intro"
+      ]);
+
+      setField("employeeId", generateRandomEmployeeId());
+      setField("name", parsed.name);
+      setField("age", normalizeAge(parsed.age));
+      setField("experience", derived.experience);
+      setField("nativePlace", parsed.nativePlace);
+      setField("currentResidence", parsed.currentResidence);
+      setField("education", parsed.education);
+      setField("height", normalizeHeight(parsed.height));
+      setField("weight", normalizeWeight(parsed.weight));
+      setField("ethnicity", parsed.ethnicity);
+      setField("zodiac", parsed.zodiac);
+      setField("healthCert", normalizeYesNo(parsed.healthCert));
+      setField("familyStatus", parsed.familyStatus);
+      setField("emergencyContact", parsed.emergencyContact);
+      setField("diseaseHistory", formatDiseaseHistory(parsed.diseaseHistory));
+      setField("serviceType", derived.serviceType);
+      setField("serviceCity", derived.serviceCity);
+      setField("motto", derived.motto);
+      setField("services", derived.services.join("，"));
+      setField("specialties", derived.specialties.join("，"));
+      setField("certificates", derived.certificates.join("，"));
+      setField("intro", derived.intro);
+
+      return derived;
+    }
+
+    function getFormData() {
+      return {
+        name: getField("name") || "未命名阿姨",
+        employeeId: getField("employeeId") || "未设置编号",
+        level: getField("level") || "优选",
+        serviceType: getField("serviceType") || "家政阿姨",
+        age: getField("age") || "待补充",
+        experience: getField("experience") || "待补充",
+        nativePlace: getField("nativePlace") || "待补充",
+        currentResidence: getField("currentResidence") || "待补充",
+        education: getField("education") || "待补充",
+        height: getField("height"),
+        weight: getField("weight"),
+        ethnicity: getField("ethnicity"),
+        zodiac: getField("zodiac"),
+        healthCert: getField("healthCert"),
+        familyStatus: getField("familyStatus"),
+        emergencyContact: getField("emergencyContact"),
+        diseaseHistory: getField("diseaseHistory"),
+        serviceCity: getField("serviceCity") || "海南省内可接单",
+        motto: getField("motto") || "服务认真细致，把家庭照顾得稳稳当当。",
+        services: splitList(getField("services")),
+        specialties: splitList(getField("specialties")),
+        certificates: splitList(getField("certificates")),
+        intro: getField("intro") || "请补充阿姨个人简介。",
+        contactLine: getField("contactLine") || "预约阿姨面试及上户请联系 13215803888。"
+      };
+    }
+
+    function roundRectPath(context, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      context.beginPath();
+      context.moveTo(x + r, y);
+      context.arcTo(x + width, y, x + width, y + height, r);
+      context.arcTo(x + width, y + height, x, y + height, r);
+      context.arcTo(x, y + height, x, y, r);
+      context.arcTo(x, y, x + width, y, r);
+      context.closePath();
+    }
+
+    function fillRoundRect(context, x, y, width, height, radius, fillStyle, strokeStyle, lineWidth = 1) {
+      context.save();
+      roundRectPath(context, x, y, width, height, radius);
+      if (fillStyle) {
+        context.fillStyle = fillStyle;
+        context.fill();
+      }
+      if (strokeStyle) {
+        context.lineWidth = lineWidth;
+        context.strokeStyle = strokeStyle;
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function drawText(text, x, y, options = {}) {
+      const {
+        font = '400 24px "PingFang SC", "Microsoft YaHei", sans-serif',
+        color = "#ffffff",
+        align = "left",
+        baseline = "alphabetic",
+        maxWidth
+      } = options;
+
+      ctx.save();
+      ctx.font = font;
+      ctx.fillStyle = color;
+      ctx.textAlign = align;
+      ctx.textBaseline = baseline;
+      if (maxWidth) {
+        ctx.fillText(text, x, y, maxWidth);
+      } else {
+        ctx.fillText(text, x, y);
+      }
+      ctx.restore();
+    }
+
+    function fitFontSize(text, maxWidth, startSize, minSize, fontFamily, weight = 700) {
+      for (let size = startSize; size >= minSize; size -= 2) {
+        ctx.save();
+        ctx.font = `${weight} ${size}px ${fontFamily}`;
+        const fits = ctx.measureText(text).width <= maxWidth;
+        ctx.restore();
+        if (fits) {
+          return size;
+        }
+      }
+      return minSize;
+    }
+
+    function wrapTextLines(text, maxWidth, maxLines, font) {
+      ctx.save();
+      ctx.font = font;
+
+      const source = String(text || "").replace(/\s+/g, " ").trim();
+      if (!source) {
+        ctx.restore();
+        return [];
+      }
+
+      const lines = [];
+      let current = "";
+
+      for (const char of source) {
+        const testLine = current + char;
+        if (ctx.measureText(testLine).width <= maxWidth || current.length === 0) {
+          current = testLine;
+          continue;
+        }
+
+        lines.push(current);
+        current = char;
+
+        if (lines.length === maxLines) {
+          break;
+        }
+      }
+
+      if (lines.length < maxLines && current) {
+        lines.push(current);
+      }
+
+      if (lines.length === maxLines) {
+        let lastLine = lines[maxLines - 1];
+        while (ctx.measureText(`${lastLine}…`).width > maxWidth && lastLine.length > 1) {
+          lastLine = lastLine.slice(0, -1);
+        }
+        if (lastLine !== lines[maxLines - 1] || lines.join("") !== source) {
+          lines[maxLines - 1] = `${lastLine}…`;
+        }
+      }
+
+      ctx.restore();
+      return lines;
+    }
+
+    function drawParagraph(text, x, y, maxWidth, options = {}) {
+      const {
+        color = "#2f484f",
+        font = '400 28px "PingFang SC", "Microsoft YaHei", sans-serif',
+        lineHeight = 42,
+        maxLines = 4
+      } = options;
+
+      const lines = wrapTextLines(text, maxWidth, maxLines, font);
+      lines.forEach((line, index) => {
+        drawText(line, x, y + index * lineHeight, { font, color });
+      });
+      return y + lines.length * lineHeight;
+    }
+
+    function drawCoverImage(image, x, y, width, height, radius) {
+      ctx.save();
+      roundRectPath(ctx, x, y, width, height, radius);
+      ctx.clip();
+
+      const imageRatio = image.width / image.height;
+      const boxRatio = width / height;
+      let drawWidth = width;
+      let drawHeight = height;
+      let offsetX = x;
+      let offsetY = y;
+
+      if (imageRatio > boxRatio) {
+        drawHeight = height;
+        drawWidth = height * imageRatio;
+        offsetX = x - (drawWidth - width) / 2;
+      } else {
+        drawWidth = width;
+        drawHeight = width / imageRatio;
+        offsetY = y - (drawHeight - height) / 2;
+      }
+
+      ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.restore();
+    }
+
+    function drawContainImage(image, x, y, width, height) {
+      ctx.save();
+      const imageRatio = image.width / image.height;
+      const boxRatio = width / height;
+      let drawWidth = width;
+      let drawHeight = height;
+      let offsetX = x;
+      let offsetY = y;
+
+      if (imageRatio > boxRatio) {
+        drawWidth = width;
+        drawHeight = width / imageRatio;
+        offsetY = y + (height - drawHeight) / 2;
+      } else {
+        drawHeight = height;
+        drawWidth = height * imageRatio;
+        offsetX = x + (width - drawWidth) / 2;
+      }
+
+      ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.restore();
+    }
+
+    function drawChipGroup(items, x, y, maxWidth, options = {}) {
+      const {
+        bg = "rgba(22, 110, 120, 0.12)",
+        text = "#19535b",
+        maxRows = 2,
+        paddingX = 18,
+        height = 42,
+        gapX = 12,
+        gapY = 12,
+        font = '600 22px "PingFang SC", "Microsoft YaHei", sans-serif'
+      } = options;
+
+      ctx.save();
+      ctx.font = font;
+
+      let cursorX = x;
+      let cursorY = y;
+      let row = 1;
+
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        const chipWidth = ctx.measureText(item).width + paddingX * 2;
+
+        if (cursorX + chipWidth > x + maxWidth) {
+          row += 1;
+          if (row > maxRows) {
+            break;
+          }
+          cursorX = x;
+          cursorY += height + gapY;
+        }
+
+        fillRoundRect(ctx, cursorX, cursorY, chipWidth, height, 21, bg, null);
+        drawText(item, cursorX + chipWidth / 2, cursorY + height / 2 + 1, {
+          font,
+          color: text,
+          align: "center",
+          baseline: "middle"
+        });
+        cursorX += chipWidth + gapX;
+      }
+
+      ctx.restore();
+      return cursorY + height;
+    }
+
+    function drawStatCard(x, y, width, height, label, value) {
+      fillRoundRect(ctx, x, y, width, height, 24, "#fdf8f1", "rgba(13, 61, 68, 0.08)");
+      drawText(label, x + 22, y + 34, {
+        font: '500 20px "PingFang SC", "Microsoft YaHei", sans-serif',
+        color: "rgba(21, 53, 59, 0.56)"
+      });
+
+      const valueSize = fitFontSize(value, width - 44, 32, 21, '"PingFang SC", "Microsoft YaHei", sans-serif', 700);
+      drawText(value, x + 22, y + 80, {
+        font: `700 ${valueSize}px "PingFang SC", "Microsoft YaHei", sans-serif`,
+        color: "#15353b"
+      });
+    }
+
+    function drawSectionTitle(title, english, x, y) {
+      drawText(english, x, y, {
+        font: '700 18px "Avenir Next", "PingFang SC", sans-serif',
+        color: "rgba(21, 53, 59, 0.42)"
+      });
+      drawText(title, x, y + 34, {
+        font: '700 30px "Source Han Serif SC", "Songti SC", serif',
+        color: "#163d44"
+      });
+    }
+
+    function drawPlaceholderPhoto(name, x, y, width, height) {
+      const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+      gradient.addColorStop(0, "#f0c97f");
+      gradient.addColorStop(1, "#e27d52");
+      fillRoundRect(ctx, x, y, width, height, 28, gradient, null);
+
+      const initial = String(name || "佳").trim().slice(0, 1) || "佳";
+      drawText(initial, x + width / 2, y + height / 2, {
+        font: '700 112px "Source Han Serif SC", "Songti SC", serif',
+        color: "rgba(255, 249, 240, 0.94)",
+        align: "center",
+        baseline: "middle"
+      });
+
+      drawText("待上传照片", x + width / 2, y + height - 34, {
+        font: '600 20px "PingFang SC", "Microsoft YaHei", sans-serif',
+        color: "rgba(255, 248, 239, 0.82)",
+        align: "center"
+      });
+    }
+
+    function drawCard(data) {
+      const width = canvas.width;
+      const height = canvas.height;
+      const footerY = height - 118;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const background = ctx.createLinearGradient(0, 0, width, height);
+      background.addColorStop(0, "#0b5059");
+      background.addColorStop(0.52, "#0f6470");
+      background.addColorStop(1, "#124a53");
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#f6ddab";
+      ctx.beginPath();
+      ctx.arc(900, 188, 170, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(120, height - 160, 210, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "#f8ecdb";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(width, 0);
+      ctx.lineTo(width, 385);
+      ctx.bezierCurveTo(830, 455, 320, 465, 0, 330);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      fillRoundRect(ctx, 60, 52, 960, 96, 30, "rgba(255, 252, 247, 0.64)", "rgba(255, 255, 255, 0.48)", 2);
+
+      const markGradient = ctx.createLinearGradient(80, 70, 140, 126);
+      markGradient.addColorStop(0, "#e27d52");
+      markGradient.addColorStop(1, "#d4ab52");
+      fillRoundRect(ctx, 84, 68, 56, 56, 20, markGradient, null);
+      drawText("佳", 112, 97, {
+        font: '700 31px "Source Han Serif SC", "Songti SC", serif',
+        color: "#fff",
+        align: "center",
+        baseline: "middle"
+      });
+      drawText("海南佳缘家政服务有限公司", 162, 100, {
+        font: '700 34px "Source Han Serif SC", "Songti SC", serif',
+        color: "#11424a"
+      });
+      drawText("HAI NAN JIA YUAN HOME SERVICE", 162, 130, {
+        font: '600 16px "Avenir Next", "PingFang SC", sans-serif',
+        color: "rgba(17, 66, 74, 0.54)"
+      });
+
+      if (state.companyLogoImage) {
+        drawContainImage(state.companyLogoImage, 824, 56, 166, 92);
+      } else {
+        drawText("佳缘家政", 908, 100, {
+          font: '700 20px "PingFang SC", "Microsoft YaHei", sans-serif',
+          color: "#2f5f67",
+          align: "center",
+          baseline: "middle"
+        });
+      }
+
+      ctx.save();
+      ctx.shadowColor = "rgba(9, 43, 48, 0.18)";
+      ctx.shadowBlur = 26;
+      ctx.shadowOffsetY = 16;
+      fillRoundRect(ctx, 74, 186, 300, 384, 34, "#fff7ed", null);
+      ctx.restore();
+
+      if (state.photoImage) {
+        drawCoverImage(state.photoImage, 92, 204, 264, 348, 28);
+      } else {
+        drawPlaceholderPhoto(data.name, 92, 204, 264, 348);
+      }
+
+      const nameSize = fitFontSize(data.name, 560, 70, 42, '"Source Han Serif SC", "Songti SC", serif', 700);
+      drawText(data.name, 412, 256, {
+        font: `700 ${nameSize}px "Source Han Serif SC", "Songti SC", serif`,
+        color: "#0f4249"
+      });
+
+      fillRoundRect(ctx, 414, 286, 126, 46, 23, "#f2c76f", null);
+      drawText(data.level, 477, 309, {
+        font: '700 22px "PingFang SC", "Microsoft YaHei", sans-serif',
+        color: "#7e4e0c",
+        align: "center",
+        baseline: "middle"
+      });
+
+      drawText(data.serviceType, 412, 380, {
+        font: '700 36px "PingFang SC", "Microsoft YaHei", sans-serif',
+        color: "#15515a"
+      });
+
+      drawParagraph(data.motto, 412, 430, 560, {
+        color: "#355d66",
+        font: '500 28px "PingFang SC", "Microsoft YaHei", sans-serif',
+        lineHeight: 42,
+        maxLines: 2
+      });
+
+      drawChipGroup(
+        data.specialties.length ? data.specialties.slice(0, 4) : ["服务稳妥", "沟通顺畅", "干净利落"],
+        412,
+        520,
+        550,
+        {
+          bg: "rgba(17, 66, 74, 0.08)",
+          text: "#0f4249",
+          maxRows: 2,
+          height: 40,
+          font: '600 20px "PingFang SC", "Microsoft YaHei", sans-serif'
+        }
+      );
+
+      fillRoundRect(ctx, 48, 604, 984, footerY - 604 - 24, 42, "#fbf6ef", null);
+      drawText("JIAYUAN", 922, 672, {
+        font: '700 54px "Avenir Next", "PingFang SC", sans-serif',
+        color: "rgba(17, 66, 74, 0.06)",
+        align: "right"
+      });
+      drawSectionTitle("阿姨档案", "PROFILE", 88, 654);
+
+      const statY = 706;
+      const statW = 210;
+      const statGap = 22;
+      drawStatCard(88, statY, statW, 112, "年龄", data.age);
+      drawStatCard(88 + (statW + statGap), statY, statW, 112, "现居地", data.currentResidence);
+      drawStatCard(88 + (statW + statGap) * 2, statY, statW, 112, "从业经验", data.experience);
+      drawStatCard(88 + (statW + statGap) * 3, statY, statW, 112, "阿姨编号", data.employeeId);
+
+      const basicLine = joinDisplayBits([
+        data.nativePlace !== "待补充" ? `籍贯 ${data.nativePlace}` : "",
+        data.height ? `身高 ${data.height}` : "",
+        data.weight ? `体重 ${data.weight}` : "",
+        data.ethnicity ? `民族 ${data.ethnicity}` : "",
+        data.zodiac ? `属相 ${data.zodiac}` : ""
+      ]);
+      const extraLine = joinDisplayBits([
+        data.healthCert ? `健康证 ${data.healthCert}` : "",
+        data.familyStatus ? `家庭 ${data.familyStatus}` : "",
+        data.diseaseHistory ? `健康情况 ${data.diseaseHistory}` : ""
+      ]);
+
+      fillRoundRect(ctx, 88, 848, 904, 62, 24, "#fffdf8", "rgba(13, 61, 68, 0.06)");
+      drawParagraph(basicLine || "基础资料待补充", 116, 886, 848, {
+        color: "#365259",
+        font: '500 22px "PingFang SC", "Microsoft YaHei", sans-serif',
+        lineHeight: 28,
+        maxLines: 2
+      });
+
+      fillRoundRect(ctx, 88, 926, 904, 62, 24, "rgba(17, 66, 74, 0.05)", null);
+      drawParagraph(extraLine || "更多资料待补充", 116, 964, 848, {
+        color: "#365259",
+        font: '500 22px "PingFang SC", "Microsoft YaHei", sans-serif',
+        lineHeight: 28,
+        maxLines: 2
+      });
+
+      const leftX = 88;
+      const rightX = 572;
+      const columnWidth = 420;
+      const sectionTop = 1030;
+
+      drawSectionTitle("服务项目", "SERVICE ITEMS", leftX, sectionTop);
+      const serviceBottom = drawChipGroup(
+        data.services.length ? data.services : ["宝宝照护", "家常做饭", "日常保洁"],
+        leftX,
+        sectionTop + 52,
+        columnWidth,
+        {
+          bg: "rgba(22, 110, 120, 0.12)",
+          text: "#19535b",
+          maxRows: 3,
+          height: 38,
+          gapX: 10,
+          gapY: 10,
+          font: '600 19px "PingFang SC", "Microsoft YaHei", sans-serif'
+        }
+      );
+
+      drawSectionTitle("个人亮点", "HIGHLIGHTS", rightX, sectionTop);
+      const highlightBottom = drawChipGroup(
+        data.specialties.length ? data.specialties : ["温和亲切", "做事稳妥", "沟通顺畅"],
+        rightX,
+        sectionTop + 52,
+        columnWidth,
+        {
+          bg: "rgba(226, 125, 82, 0.12)",
+          text: "#8d4f33",
+          maxRows: 3,
+          height: 38,
+          gapX: 10,
+          gapY: 10,
+          font: '600 19px "PingFang SC", "Microsoft YaHei", sans-serif'
+        }
+      );
+
+      const introTop = Math.max(serviceBottom, highlightBottom) + 36;
+      drawSectionTitle("个人简介", "INTRODUCTION", leftX, introTop);
+      fillRoundRect(ctx, leftX, introTop + 52, 904, 214, 28, "#fffdf8", "rgba(13, 61, 68, 0.08)");
+      drawText("“", leftX + 20, introTop + 126, {
+        font: '700 64px "Source Han Serif SC", "Songti SC", serif',
+        color: "rgba(17, 66, 74, 0.14)"
+      });
+      drawParagraph(data.intro, leftX + 54, introTop + 106, 816, {
+        color: "#2f484f",
+        font: '400 22px "PingFang SC", "Microsoft YaHei", sans-serif',
+        lineHeight: 34,
+        maxLines: 5
+      });
+
+      fillRoundRect(ctx, 88, footerY, 904, 78, 26, "#11545d", null);
+      drawText(data.contactLine, 540, footerY + 47, {
+        color: "rgba(255, 248, 239, 0.94)",
+        font: '700 24px "PingFang SC", "Microsoft YaHei", sans-serif',
+        align: "center"
+      });
+    }
+
+    function renderCard() {
+      const data = getFormData();
+      previewTitle.textContent = `${data.name} 名片预览`;
+      drawCard(data);
+    }
+
+    function extractFromRawProfile(isInitial = false) {
+      const rawText = String(rawProfileInput.value || "");
+      if (!rawText.trim()) {
+        statusEl.textContent = "请先粘贴阿姨原始资料，再点击自动提炼。";
+        return;
+      }
+
+      const parsed = parseRawProfile(rawText);
+      applyParsedProfile(parsed);
+      renderCard();
+      statusEl.textContent = isInitial
+        ? "已根据示例简历自动提炼资料，你可以直接替换成下一位阿姨的信息。"
+        : "已从原始简历中自动提炼资料，并生成适合名片展示的文案。";
+    }
+
+    function loadPhoto(file) {
+      if (!file) {
+        state.photoImage = null;
+        renderCard();
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new Image();
+        image.onload = () => {
+          state.photoImage = image;
+          statusEl.textContent = `已载入照片：${file.name}`;
+          renderCard();
+        };
+        image.onerror = () => {
+          statusEl.textContent = "照片加载失败，请更换文件后重试。";
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function sanitizeFileName(value) {
+      return String(value || "佳缘家政阿姨")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .replace(/\s+/g, "-");
+    }
+
+    form.addEventListener("input", (event) => {
+      if (event.target === rawProfileInput) {
+        return;
+      }
+      renderCard();
+    });
+
+    form.addEventListener("change", (event) => {
+      if (event.target === rawProfileInput) {
+        return;
+      }
+      renderCard();
+    });
+
+    parseBtn.addEventListener("click", () => {
+      extractFromRawProfile();
+    });
+
+    rawProfileInput.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        extractFromRawProfile();
+      }
+    });
+
+    photoInput.addEventListener("change", (event) => {
+      const [file] = event.target.files || [];
+      if (!file) {
+        return;
+      }
+      loadPhoto(file);
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      const fileName = `${sanitizeFileName(getField("name")) || "佳缘家政阿姨"}-名片.png`;
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          statusEl.textContent = "导出失败，请重试。";
+          return;
+        }
+
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        statusEl.textContent = `已导出图片：${fileName}`;
+      }, "image/png");
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      form.reset();
+      state.photoImage = null;
+      photoInput.value = "";
+      extractFromRawProfile(true);
+    });
+
+    clearPhotoBtn.addEventListener("click", () => {
+      state.photoImage = null;
+      photoInput.value = "";
+      statusEl.textContent = "照片已清空，当前使用占位头像。";
+      renderCard();
+    });
+
+    loadCompanyLogo();
+    extractFromRawProfile(true);
+  </script>
+</body>
+</html>

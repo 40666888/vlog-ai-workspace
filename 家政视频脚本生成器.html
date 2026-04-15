@@ -1,0 +1,2783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家政平台即梦视频提示词生成器</title>
+  <style>
+    :root {
+      --bg: #f8efe3;
+      --bg-soft: rgba(255, 250, 245, 0.78);
+      --paper: rgba(255, 252, 247, 0.92);
+      --paper-strong: #fffaf4;
+      --ink: #33251d;
+      --ink-soft: #6a5649;
+      --accent: #c96d3b;
+      --accent-deep: #99481f;
+      --green: #738b63;
+      --gold: #c59b4b;
+      --line: rgba(67, 43, 28, 0.12);
+      --shadow: 0 24px 70px rgba(96, 58, 30, 0.13);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 219, 182, 0.75), transparent 34%),
+        radial-gradient(circle at right 18%, rgba(204, 224, 196, 0.55), transparent 30%),
+        linear-gradient(160deg, #f7ecdd 0%, #fdf7ef 48%, #f3e5d4 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(12px);
+      opacity: 0.65;
+    }
+
+    body::before {
+      width: 300px;
+      height: 300px;
+      right: -120px;
+      top: 80px;
+      background: rgba(217, 161, 105, 0.18);
+    }
+
+    body::after {
+      width: 220px;
+      height: 220px;
+      left: -90px;
+      bottom: 140px;
+      background: rgba(116, 147, 114, 0.14);
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .hero-main,
+    .hero-side {
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -80px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 109, 59, 0.24), transparent 72%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(201, 109, 59, 0.18);
+      background: rgba(255, 247, 240, 0.88);
+      color: var(--accent-deep);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e39a62, #b25529);
+      box-shadow: 0 0 0 4px rgba(201, 109, 59, 0.12);
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+      font-size: clamp(2.1rem, 4vw, 4.35rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255, 250, 244, 0.88);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      font-family: "Songti SC", "STSong", serif;
+      color: var(--accent-deep);
+      margin-bottom: 6px;
+    }
+
+    .metric span {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .recipe {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .recipe-card {
+      padding: 16px 18px;
+      border-radius: 20px;
+      background: rgba(255, 251, 246, 0.9);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .recipe-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .recipe-card span {
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(360px, 470px) minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .editor,
+    .output {
+      padding: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 24px;
+      font-family: "Songti SC", "STSong", serif;
+      font-weight: 600;
+    }
+
+    .section-header span {
+      color: var(--ink-soft);
+      font-size: 13px;
+    }
+
+    .field-group {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 252, 247, 0.82);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .field-group h3 {
+      margin: 0 0 14px;
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(67, 43, 28, 0.12);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      border-radius: 18px;
+      padding: 13px 14px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    textarea {
+      min-height: 116px;
+      resize: vertical;
+      line-height: 1.7;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(201, 109, 59, 0.55);
+      box-shadow: 0 0 0 4px rgba(201, 109, 59, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 13px 20px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ce7443, #a44e26);
+      color: #fffaf4;
+      box-shadow: 0 14px 30px rgba(164, 78, 38, 0.22);
+    }
+
+    .btn-secondary {
+      background: rgba(115, 139, 99, 0.12);
+      color: #4d6240;
+      border: 1px solid rgba(115, 139, 99, 0.16);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--ink);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      color: var(--ink-soft);
+      font-size: 13px;
+    }
+
+    .output-top {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      border-radius: 24px;
+      padding: 20px;
+      background: rgba(255, 252, 248, 0.9);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .card h3,
+    .card h4 {
+      margin: 0 0 12px;
+      font-size: 17px;
+    }
+
+    .summary-title {
+      font-size: clamp(1.5rem, 2.4vw, 2.35rem);
+      margin: 0 0 10px;
+      line-height: 1.2;
+      font-family: "Songti SC", "STSong", serif;
+    }
+
+    .summary-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 0;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(201, 109, 59, 0.09);
+      color: var(--accent-deep);
+      font-size: 12px;
+      border: 1px solid rgba(201, 109, 59, 0.12);
+    }
+
+    .tone-list,
+    .trust-list,
+    .quote-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tone-list li,
+    .trust-list li,
+    .quote-list li {
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(67, 43, 28, 0.07);
+      color: var(--ink-soft);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .script-block {
+      margin-top: 14px;
+      padding: 24px;
+      background:
+        linear-gradient(transparent 95%, rgba(201, 109, 59, 0.07) 95%),
+        linear-gradient(90deg, rgba(201, 109, 59, 0.05), rgba(201, 109, 59, 0.02));
+      background-size: 100% 34px, 100% 100%;
+      border-radius: 24px;
+      border: 1px solid rgba(67, 43, 28, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .script-block::before {
+      content: "SCRIPT";
+      position: absolute;
+      right: 22px;
+      top: 18px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: rgba(153, 72, 31, 0.28);
+    }
+
+    .script-text {
+      white-space: pre-wrap;
+      margin: 0;
+      line-height: 2.05;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 252, 248, 0.88);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .timeline-time {
+      padding: 10px 12px;
+      text-align: center;
+      border-radius: 16px;
+      background: rgba(115, 139, 99, 0.12);
+      color: #526647;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .timeline-body strong {
+      display: block;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .timeline-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .timeline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .timeline-body p {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.75;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .copy-mini {
+      border: 1px solid rgba(67, 43, 28, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .copy-mini:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(96, 58, 30, 0.08);
+      background: #fffaf4;
+    }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .prompt-snippet {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 252, 248, 0.88);
+      border: 1px solid rgba(67, 43, 28, 0.08);
+    }
+
+    .prompt-snippet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .prompt-snippet-header strong {
+      display: block;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .prompt-snippet-text {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.8;
+      font-size: 14px;
+      color: var(--ink-soft);
+    }
+
+    .scene-blocks {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .scene-block {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(67, 43, 28, 0.07);
+    }
+
+    .scene-block-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .scene-block-head span {
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .scene-block-text {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.75;
+      font-size: 14px;
+      color: var(--ink-soft);
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel,
+    .card,
+    .timeline-item {
+      animation: rise 0.7s ease both;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .workspace,
+      .output-top {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, 1240px);
+        padding-top: 18px;
+      }
+
+      .hero-main,
+      .hero-side,
+      .editor,
+      .output {
+        padding: 20px;
+      }
+
+      .hero-metrics,
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-item {
+        grid-template-columns: 1fr;
+      }
+
+      .prompt-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-main panel">
+        <span class="eyebrow">家政平台即梦视频提示词生成器</span>
+        <h1>把客户的顾虑，生成成能直接喂给即梦平台的家政提示词。</h1>
+        <p>
+          这个页面专门用于把你抓取到的家政公司痛点、客户需求和信任素材，整理成更有人情味、更贴近日常生活的即梦视频提示词。输出结果会优先突出真实场景、服务细节和可信感，帮助家政公司把“安心”讲得更具体，也更方便直接投入即梦生成流程。
+        </p>
+        <div class="hero-metrics">
+          <div class="metric">
+            <strong>生活化</strong>
+            <span>从早晨赶时间、老人照护、孩子接送这些真实场景切入。</span>
+          </div>
+          <div class="metric">
+            <strong>可信度</strong>
+            <span>自动把培训、核验、售后、回访等细节变成信任证据。</span>
+          </div>
+          <div class="metric">
+            <strong>可转化</strong>
+            <span>提示词里会自然加入预约、咨询、匹配等行动引导。</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="hero-side panel">
+        <div class="section-header">
+          <h2>一页完成</h2>
+          <span>从素材到成稿</span>
+        </div>
+        <div class="recipe">
+          <div class="recipe-card">
+            <strong>1. 粘贴抓取内容</strong>
+            <span>把各家政公司的痛点、客户需求、优势细节逐条贴进来，换行输入即可。</span>
+          </div>
+          <div class="recipe-card">
+            <strong>2. 设定表达方向</strong>
+            <span>选择视频风格、目标客户和时长，让生成结果更贴近你要投放的场景。</span>
+          </div>
+          <div class="recipe-card">
+            <strong>3. 直接拿走提示词</strong>
+            <span>页面会输出全局主提示词、按分镜拆好的即梦直贴版，以及整条视频可直接使用的旁白建议。</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="workspace">
+      <section class="editor panel">
+        <div class="section-header">
+          <h2>素材录入区</h2>
+          <span>只在本页本地生成，不依赖其他文件</span>
+        </div>
+
+        <form id="generatorForm">
+          <div class="field-group">
+            <h3>基础信息</h3>
+            <div class="grid-two">
+              <div>
+                <label for="companyName">家政公司名称（固定）</label>
+                <input id="companyName" name="companyName" type="text" value="佳缘家政服务有限公司" readonly>
+                <div class="hint">已按你的要求统一为“佳缘家政服务有限公司”，本页生成结果会自动沿用。</div>
+              </div>
+              <div>
+                <label for="serviceType">主营服务</label>
+                <input id="serviceType" name="serviceType" type="text" placeholder="例如：育儿嫂 / 保姆 / 保洁 / 养老陪护">
+              </div>
+              <div>
+                <label for="targetAudience">目标客户</label>
+                <select id="targetAudience" name="targetAudience">
+                  <option value="双职工家庭">双职工家庭</option>
+                  <option value="宝妈家庭">宝妈家庭</option>
+                  <option value="老人照护家庭">老人照护家庭</option>
+                  <option value="高频保洁用户">高频保洁用户</option>
+                  <option value="新生儿家庭">新生儿家庭</option>
+                </select>
+              </div>
+              <div>
+                <label for="videoStyle">视频风格</label>
+                <select id="videoStyle" name="videoStyle">
+                  <option value="warm">暖心纪实</option>
+                  <option value="story">客户故事</option>
+                  <option value="professional">专业安心</option>
+                  <option value="community">邻里口碑</option>
+                </select>
+              </div>
+              <div>
+                <label for="videoDuration">视频时长</label>
+                <select id="videoDuration" name="videoDuration">
+                  <option value="15">15 秒</option>
+                  <option value="20">20 秒</option>
+                  <option value="30" selected>30 秒</option>
+                </select>
+                <div class="hint">已按你的要求控制在 30 秒以内，默认输出更适合短视频转化的节奏。</div>
+              </div>
+              <div>
+                <label for="conversionGoal">行动引导</label>
+                <input id="conversionGoal" name="conversionGoal" type="text" placeholder="例如：先私信咨询，再预约匹配">
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <h3>抓取到的客户顾虑与需求</h3>
+            <div>
+              <label for="painPoints">家政公司痛点 / 客户顾虑</label>
+              <textarea id="painPoints" name="painPoints" placeholder="每条换一行，例如：&#10;担心阿姨临时爽约&#10;怕服务和宣传不一致&#10;家里有老人孩子，不敢随便让陌生人上门"></textarea>
+              <div class="hint">建议一行一条，系统会优先把这些顾虑转成“共鸣开场”和“信任化解”。</div>
+            </div>
+            <div style="margin-top: 14px;">
+              <label for="customerNeeds">抓取到的客户原始需求</label>
+              <textarea id="customerNeeds" name="customerNeeds" placeholder="每条换一行，例如：&#10;希望阿姨准时上门，手脚利索&#10;希望有人能长期稳定服务&#10;希望沟通有边界感，有问题能及时处理"></textarea>
+              <div class="hint">把客户嘴上说的需求先贴进来，系统会结合上面的顾虑，自动提炼出“客户真正想解决的问题”。</div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <h3>信任素材与品牌表达</h3>
+            <div>
+              <label for="trustPoints">可信细节 / 服务亮点</label>
+              <textarea id="trustPoints" name="trustPoints" placeholder="每条换一行，例如：&#10;阿姨实名核验和背景审查&#10;上岗前培训和服务流程考核&#10;客服全程跟进，不满意可及时调整"></textarea>
+              <div class="hint">越具体越好，比如实名认证、试工机制、售后响应、服务回访、服务记录留痕等。</div>
+            </div>
+            <div class="grid-two" style="margin-top: 14px;">
+              <div>
+                <label for="brandPromise">想传达的一句话</label>
+                <input id="brandPromise" name="brandPromise" type="text" placeholder="例如：把家交给我们，先把放心给你">
+              </div>
+              <div>
+                <label for="cityName">服务城市 / 区域</label>
+                <input id="cityName" name="cityName" type="text" value="海南" placeholder="例如：海南海口 / 海南三亚 / 海南琼海">
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">生成即梦提示词</button>
+            <button class="btn btn-secondary" type="button" id="sampleBtn">填充示例素材</button>
+            <button class="btn btn-ghost" type="button" id="clearBtn">清空输入</button>
+          </div>
+          <div class="status" id="statusText">页面已准备好，输入素材后即可生成即梦提示词。</div>
+        </form>
+      </section>
+
+      <section class="output panel">
+        <div class="section-header">
+          <h2>生成结果</h2>
+          <span>可直接用于即梦平台</span>
+        </div>
+
+        <div class="output-top">
+          <article class="card">
+            <h3>提示词定位</h3>
+            <div class="summary-title" id="scriptTitle">还没有生成提示词</div>
+            <p id="scriptSummary" style="margin: 0; color: var(--ink-soft); line-height: 1.8;">
+              生成后，这里会先告诉你这版即梦提示词主打什么情绪、适合什么人群，以及它最核心的信任表达。
+            </p>
+            <div class="summary-meta" id="metaTags">
+              <span class="tag">生活场景</span>
+              <span class="tag">信任建立</span>
+              <span class="tag">即梦优先</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>信任强化点</h3>
+            <ul class="trust-list" id="trustList">
+              <li>生成后会自动提炼出值得放在视频里的服务细节，帮助观众更快建立信任。</li>
+              <li>如果你没填服务亮点，页面也会补充常见的家政信任表达作参考。</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="card" style="margin-top: 14px;">
+          <h3>客户真正需求</h3>
+          <ul class="trust-list" id="needInsightList">
+            <li>生成后会结合你填的原始需求和顾虑，自动提炼出客户真正想解决的问题。</li>
+          </ul>
+        </article>
+
+        <article class="card" style="margin-top: 14px;">
+          <h3>分镜复制辅助</h3>
+          <div class="prompt-grid">
+            <div class="prompt-snippet">
+              <div class="prompt-snippet-header">
+                <strong>全局主提示词</strong>
+                <button class="copy-mini" type="button" id="copyGlobalBtn">复制全局</button>
+              </div>
+              <pre class="prompt-snippet-text" id="globalPromptText">生成后这里会显示可单独复制的全局主提示词。</pre>
+            </div>
+            <div class="prompt-snippet">
+              <div class="prompt-snippet-header">
+                <strong>即梦负面提示词</strong>
+                <button class="copy-mini" type="button" id="copyNegativeBtn">复制负面</button>
+              </div>
+              <pre class="prompt-snippet-text" id="negativePromptText">生成后这里会显示可单独复制的负面提示词。</pre>
+            </div>
+          </div>
+        </article>
+
+        <article class="card" style="margin-top: 14px;">
+          <div class="prompt-snippet-header" style="margin-bottom: 12px;">
+            <strong>整条视频旁白建议</strong>
+            <button class="copy-mini" type="button" id="copyNarrationBtn">复制旁白</button>
+          </div>
+          <pre class="prompt-snippet-text" id="fullNarrationText">生成后这里会汇总整条视频的完整旁白，不再按分镜拆开。</pre>
+        </article>
+
+        <article class="card" style="margin-top: 14px;">
+          <h3>分镜提示词拆解</h3>
+          <div class="timeline" id="timelineList">
+            <div class="timeline-item">
+              <div class="timeline-time">等待生成</div>
+              <div class="timeline-body">
+                <strong>先输入上方素材</strong>
+                <p>生成后这里会自动拆成分镜提示词时间轴，方便你直接喂给即梦平台。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card" style="margin-top: 14px;">
+          <h3>字幕金句</h3>
+          <ul class="quote-list" id="quoteList">
+            <li>生成后会给出适合叠在画面上的短句，用来强化真实感和信任感。</li>
+          </ul>
+          <p class="footer-note" id="footerNote">
+            建议把最具体的服务细节放在中段提示词里，把最柔软的一句信任表达放在结尾镜头，AI 画面会更容易兼顾生活感和转化感。
+          </p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const fixedCompanyName = "佳缘家政服务有限公司";
+
+    const styleLibrary = {
+      warm: {
+        label: "暖心纪实",
+        summary: "用真实生活的细节打动人，先共鸣，再建立放心感。",
+        promptTone: "真实中国家庭，生活纪录片质感，人物互动自然，细节克制不摆拍",
+        camera: "中近景切换，轻微手持，缓慢推镜，少量跟拍",
+        lighting: "暖色自然光，晨间或傍晚柔和光线，肤色真实",
+        hooks: [
+          "很多家庭找家政，最怕的从来不是多花一点钱，而是把家交出去以后，心里还是悬着。",
+          "真正让人迟迟不敢下单的，不是家里需不需要帮手，而是不知道该把这份信任交给谁。",
+          "家里越忙、越有老人孩子，找家政这件事，越不是随便选一个人上门那么简单。"
+        ],
+        ctas: [
+          "如果你也在找一个真正让人省心的家政服务，不妨先聊需求，再决定要不要预约。",
+          "先把家里的情况说给我们听，我们帮你匹配合适的人，再由你安心做决定。",
+          "与其反复犹豫，不如先做一次需求沟通，看看什么样的服务更适合你家。"
+        ],
+        captions: [
+          "让人放心的，不是说得多好，而是细节经得起看。",
+          "家政服务做得好，家里的节奏真的会慢慢顺起来。",
+          "被认真对待的家，住起来才会更安心。"
+        ]
+      },
+      story: {
+        label: "客户故事",
+        summary: "通过一个家庭的变化，把“从担心到放心”的心理过程讲出来。",
+        promptTone: "真实中国家庭故事短片，情绪递进清晰，有人物变化感和陪伴感",
+        camera: "从特写到中景递进，镜头连贯，有轻微叙事推进感",
+        lighting: "自然居家光线，层次柔和，偏暖但不过度滤镜",
+        hooks: [
+          "以前总觉得请家政很难，直到真正忙到顾不上家里，才知道有人搭把手有多重要。",
+          "很多客户第一次联系我们的时候，开口先说的不是需求，而是顾虑。",
+          "一个家庭愿意开始找家政，往往不是因为懒，而是真的有些时刻太需要被分担了。"
+        ],
+        ctas: [
+          "如果你家里也正经历类似的阶段，可以先来聊聊，我们一起把合适的人找到。",
+          "每个家庭的情况都不一样，先说说你的难处，我们再给出更贴合的建议。",
+          "把顾虑讲清楚，比急着下单更重要。先咨询，再决定。"
+        ],
+        captions: [
+          "从不敢尝试，到终于放心，靠的是一次次被认真回应。",
+          "真正的好服务，是让客户慢慢放下心。",
+          "每个想找家政的家庭，背后都有自己的难。"
+        ]
+      },
+      professional: {
+        label: "专业安心",
+        summary: "把流程、培训和售后讲得清楚，让观众知道安心不是空话。",
+        promptTone: "写实服务广告片，流程清楚，细节利落，专业但不冰冷",
+        camera: "稳定中景，局部特写穿插，镜头干净利落",
+        lighting: "通透自然光，室内色温统一，干净明亮",
+        hooks: [
+          "家政行业最难建立的，从来不是价格认知，而是信任认知。",
+          "客户愿不愿意下单，往往取决于一句话：你们到底靠什么让人放心？",
+          "真正有竞争力的家政服务，不只是把活干完，更是把每一个不确定提前处理好。"
+        ],
+        ctas: [
+          "想了解更适合你家的服务安排，可以先咨询，我们把流程和标准讲清楚。",
+          "先把标准看明白，再决定是否预约，这样下单才更放心。",
+          "如果你在比较不同家政公司，欢迎先来了解我们的匹配和售后机制。"
+        ],
+        captions: [
+          "信任不是包装出来的，是流程一步步做出来的。",
+          "真正专业的家政服务，看得到标准，也感受得到温度。",
+          "越是进家门的服务，越需要把细节做在前面。"
+        ]
+      },
+      community: {
+        label: "邻里口碑",
+        summary: "像熟人介绍一样自然，把家政服务说得更接地气、更容易信。",
+        promptTone: "社区口碑短视频风格，熟人推荐感，亲切自然，真实居家氛围",
+        camera: "平视镜头为主，少量移动跟拍，像真实记录邻里日常",
+        lighting: "自然日光，社区和家庭环境都要真实柔和",
+        hooks: [
+          "现在很多家庭找家政，更像是在找一个能长期放心合作的人。",
+          "口碑好的家政公司，往往不是广告做得响，而是客户真心愿意推荐。",
+          "愿意把服务推荐给亲戚朋友，才说明这份家政服务真的让人安心。"
+        ],
+        ctas: [
+          "如果你也想找一家更靠谱的家政公司，可以先来问问，看适不适合你家。",
+          "先把家里的真实情况告诉我们，我们按你的节奏来匹配，不催着下决定。",
+          "咨询一下不吃亏，先把标准和服务说清楚，再看要不要继续。"
+        ],
+        captions: [
+          "真正的口碑，是客户愿意把你介绍给家里人。",
+          "靠谱的服务，不会只停在第一次合作。",
+          "越贴近生活的服务，越需要长期的安心感。"
+        ]
+      }
+    };
+
+    const serviceScenes = {
+      "保洁": [
+        "下班回家，鞋还没换，客厅里的杂物和厨房的油渍已经先让人累了一半。",
+        "本来想趁周末好好休息，可一想到全屋清洁、玻璃、卫生间，又只能硬着头皮忙一天。",
+        "家里看着不算乱，可细节一积累起来，真正动手收拾的人才知道有多费神。"
+      ],
+      "保姆": [
+        "早上刚把孩子叫醒，厨房还热着锅，老人又在客厅等着照看，家里的节奏一下就绷紧了。",
+        "不是家里没人做事，而是每个人都在赶时间，越到这种时候，越需要一个稳当的人来搭把手。",
+        "真正让人想找保姆的那一刻，往往不是忙不过来，而是家里的每件小事都不能掉链子。"
+      ],
+      "育儿嫂": [
+        "孩子刚醒、奶瓶没洗、衣服还没晾，年轻爸妈一边心疼孩子，一边也被日常琐事压得喘不过气。",
+        "带娃不是只要勤快，更需要懂节奏、懂卫生、懂怎么和家里人好好配合。",
+        "很多家庭需要的，不只是会带孩子的人，而是一个能让全家都松口气的帮手。"
+      ],
+      "月嫂": [
+        "夜里两三点宝宝又醒了，妈妈刚躺下没多久，身体还没恢复，情绪也最需要被照顾。",
+        "请月嫂不是图省事，而是想让产妇休息好一点，让新生儿照护更稳妥一点。",
+        "这段时间家里最怕的，不是忙，而是忙乱里没人能把细节照顾周全。"
+      ],
+      "养老陪护": [
+        "家里老人起夜、吃药、洗漱、情绪变化，每一件看着不大，却都需要有人耐心盯着。",
+        "子女不是不想照顾，而是工作和生活一挤，最怕自己想尽力，却还是顾不过来。",
+        "老人照护最让人不放心的，是把身体和情绪都交到陌生人手里。"
+      ]
+    };
+
+    const audienceScenes = {
+      "双职工家庭": [
+        "两个大人都在上班，白天忙工作，晚上忙孩子和家务，家里像一直停不下来的接力赛。",
+        "每天回到家，真正耗掉精力的不是工作本身，而是还没开始的第二轮忙碌。"
+      ],
+      "宝妈家庭": [
+        "看起来一天都在家，其实从喂饭、收拾、哄睡到整理家务，几乎没有真正停下来的时候。",
+        "有孩子以后，很多家务不是做不做的问题，而是总有人比家务更需要被照顾。"
+      ],
+      "老人照护家庭": [
+        "家里老人需要陪伴和照应，很多事情不能拖，也不能大意，照护这件事就更需要稳定。",
+        "最难的不是做几件事，而是每天都有人在，看得到、顾得到、回应得上。"
+      ],
+      "高频保洁用户": [
+        "家里长期有人活动，灰尘、台面、水渍总是一轮接一轮，清洁从来不是一次就结束的事。",
+        "真正让人轻松的，不是偶尔大扫除一次，而是家里持续保持干净和顺手。"
+      ],
+      "新生儿家庭": [
+        "家里有了宝宝以后，作息、情绪、卫生标准全都变了，任何一点不稳都会被放大。",
+        "新生儿家庭最需要的，不是多一个人，而是多一份专业又细致的照顾。"
+      ]
+    };
+
+    const defaultTrustPoints = [
+      "阿姨实名核验和背景审查",
+      "上岗前培训与服务标准考核",
+      "客服全程跟进，出现问题及时响应",
+      "服务过程可回访、可调整、可追踪"
+    ];
+
+    const durationSlots = {
+      "15": ["0-4s", "4-10s", "10-15s"],
+      "20": ["0-4s", "4-9s", "9-15s", "15-20s"],
+      "30": ["0-4s", "4-9s", "9-15s", "15-22s", "22-30s"]
+    };
+
+    const shotLabels = ["镜头一", "镜头二", "镜头三"];
+
+    const hainanLifeLibrary = {
+      homes: [
+        "通风明亮的海南普通家庭客厅",
+        "带落地窗和阳台的海南家庭客厅",
+        "木色家具、白纱窗帘的海南家庭客厅"
+      ],
+      lights: [
+        "清晨偏金色的海南阳光透过白纱窗帘照进来",
+        "明亮潮润的海南日光，木地板，浅色沙发",
+        "午后通透的海南自然光把客厅照得很柔和"
+      ],
+      plants: [
+        "阳台边的椰子绿植和龟背竹",
+        "窗边的散尾葵和绿萝",
+        "阳台外隐约可见的热带绿植"
+      ],
+      fruits: [
+        "一小盘切好的芒果和火龙果",
+        "一盘凤梨和木瓜",
+        "餐桌边刚切开的芒果和莲雾"
+      ],
+      clothing: [
+        "轻薄透气的棉麻家居服",
+        "浅色短袖居家服",
+        "柔软宽松的薄款家居服"
+      ],
+      breezes: [
+        "白纱窗帘被海风轻轻带动",
+        "阳台纱帘微微晃动",
+        "窗边有轻轻流动的海岛空气感"
+      ]
+    };
+
+    const form = document.getElementById("generatorForm");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const copyGlobalBtn = document.getElementById("copyGlobalBtn");
+    const copyNegativeBtn = document.getElementById("copyNegativeBtn");
+    const copyNarrationBtn = document.getElementById("copyNarrationBtn");
+    const statusText = document.getElementById("statusText");
+
+    const companyNameInput = document.getElementById("companyName");
+    const serviceTypeInput = document.getElementById("serviceType");
+    const targetAudienceInput = document.getElementById("targetAudience");
+    const videoStyleInput = document.getElementById("videoStyle");
+    const videoDurationInput = document.getElementById("videoDuration");
+    const conversionGoalInput = document.getElementById("conversionGoal");
+    const painPointsInput = document.getElementById("painPoints");
+    const customerNeedsInput = document.getElementById("customerNeeds");
+    const trustPointsInput = document.getElementById("trustPoints");
+    const brandPromiseInput = document.getElementById("brandPromise");
+    const cityNameInput = document.getElementById("cityName");
+
+    const scriptTitle = document.getElementById("scriptTitle");
+    const scriptSummary = document.getElementById("scriptSummary");
+    const globalPromptText = document.getElementById("globalPromptText");
+    const negativePromptText = document.getElementById("negativePromptText");
+    const fullNarrationText = document.getElementById("fullNarrationText");
+    const needInsightList = document.getElementById("needInsightList");
+    const trustList = document.getElementById("trustList");
+    const timelineList = document.getElementById("timelineList");
+    const quoteList = document.getElementById("quoteList");
+    const metaTags = document.getElementById("metaTags");
+    const footerNote = document.getElementById("footerNote");
+
+    let latestBundle = null;
+
+    async function copyToClipboard(text, successText, failureText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        statusText.textContent = successText;
+      } catch (error) {
+        statusText.textContent = failureText;
+      }
+    }
+
+    function splitItems(value) {
+      return value
+        .split(/\n|；|;|。|,|，/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    function uniqueItems(items) {
+      return [...new Set(items.filter(Boolean))];
+    }
+
+    function pick(items, seed) {
+      return items[seed % items.length];
+    }
+
+    function joinItems(items, fallback) {
+      const clean = uniqueItems(items);
+      if (!clean.length) {
+        return fallback;
+      }
+      if (clean.length === 1) {
+        return clean[0];
+      }
+      return clean.slice(0, -1).join("、") + "和" + clean[clean.length - 1];
+    }
+
+    function normalizeService(service) {
+      if (service.includes("月嫂")) return "月嫂";
+      if (service.includes("育儿嫂")) return "育儿嫂";
+      if (service.includes("保姆")) return "保姆";
+      if (service.includes("保洁")) return "保洁";
+      if (service.includes("养老") || service.includes("陪护") || service.includes("护工")) return "养老陪护";
+      return "";
+    }
+
+    function createTrustLine(companyName, trustPoints) {
+      const lead = companyName || "这家家政公司";
+      const pieces = trustPoints.slice(0, 2);
+      return `${lead}把安心感，落在了${joinItems(pieces, "身份核验和售后跟进")}这些看得见的细节里。`;
+    }
+
+    function containsKeyword(items, keywords) {
+      return items.some((item) => keywords.some((keyword) => item.includes(keyword)));
+    }
+
+    function deriveRealNeeds(rawNeeds, pains, serviceType, targetAudience) {
+      const normalizedService = normalizeService(serviceType);
+      const source = uniqueItems([...(rawNeeds || []), ...(pains || [])]);
+      const insights = [];
+
+      function addInsight(text) {
+        if (text && !insights.includes(text)) {
+          insights.push(text);
+        }
+      }
+
+      if (containsKeyword(source, ["爽约", "迟到", "临时", "稳定", "长期", "频繁换人", "固定"])) {
+        addInsight("关键时候服务不断档，别临时掉链子");
+      }
+
+      if (containsKeyword(source, ["陌生", "不敢", "不放心", "放心", "安全", "老人", "孩子", "核验", "背景", "审查"])) {
+        addInsight("上门的人安全可靠，家里老人孩子都能放心");
+      }
+
+      if (containsKeyword(source, ["宣传", "不一致", "粗糙", "专业", "卫生", "细致", "分寸", "标准", "经验"])) {
+        addInsight("做事专业细致，关键环节别出错");
+      }
+
+      if (containsKeyword(source, ["沟通", "协调", "边界", "售后", "回访", "反馈", "响应"])) {
+        addInsight("沟通顺畅、边界清楚，出了问题有人马上接住");
+      }
+
+      if (containsKeyword(source, ["准时", "上门", "马上", "今天", "利索", "效率"])) {
+        addInsight("需求说完能尽快安排，上门准时，做事利索");
+      }
+
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        addInsight("懂带娃节奏、卫生细节，也能和家里人配合顺");
+      } else if (normalizedService === "保姆") {
+        addInsight("孩子、老人和一日三餐都有人稳稳接住");
+      } else if (normalizedService === "保洁") {
+        addInsight("家里不是只干净一会儿，而是长期顺手、不用反复返工");
+      } else if (normalizedService === "养老陪护") {
+        addInsight("照护动作稳、观察细，家属不在身边也能放心");
+      }
+
+      if (targetAudience === "双职工家庭") {
+        addInsight("最忙的时候有人把家里的关键环节接住，下班后不用再扛第二轮家务");
+      } else if (targetAudience === "宝妈家庭") {
+        addInsight("带娃和家务能被分担，自己真的能喘口气");
+      } else if (targetAudience === "老人照护家庭") {
+        addInsight("老人日常照护稳定，家属不在跟前也能及时顾上");
+      } else if (targetAudience === "高频保洁用户") {
+        addInsight("家里能持续保持清爽顺手，而不是隔几天就重新乱掉");
+      } else if (targetAudience === "新生儿家庭") {
+        addInsight("新生儿照护更稳，家里大人也能真正休息一下");
+      }
+
+      if (!insights.length && rawNeeds.length) {
+        rawNeeds.slice(0, 3).forEach((item) => {
+          const cleaned = item
+            .replace(/^(希望|想要|需要|最好)/, "")
+            .replace(/[。；;]+$/g, "")
+            .trim();
+          if (cleaned) {
+            addInsight(cleaned);
+          }
+        });
+      }
+
+      if (!insights.length) {
+        addInsight("家里的关键节奏能被稳稳接住，少操心，也少踩坑");
+      }
+
+      return insights.slice(0, 4);
+    }
+
+    function formatRealNeedItems(realNeeds) {
+      return realNeeds.map((item) => `客户真正想要的，是${item}。`);
+    }
+
+    function createNeedLine(needs, serviceType) {
+      if (!needs.length) {
+        return `客户真正想要的，不是听承诺，而是${serviceType || "家政服务"}今天就能把家里的节奏接住。`;
+      }
+      return `大家最后想要的很直接：${joinItems(needs.slice(0, 2), "有人准时上门、做事利索")}，今天把需求说清楚，最好今天就能开始解决。`;
+    }
+
+    function createPainLine(pains) {
+      if (!pains.length) {
+        return "很多人迟迟下不了单，不是不需要帮手，而是怕请错人，花了钱还更闹心。";
+      }
+      return `一想到${joinItems(pains.slice(0, 2), "人不靠谱、服务不稳定")}，很多人不是不想下单，而是怕请错人以后更麻烦。`;
+    }
+
+    function createSolutionLine(companyName, serviceType, trustPoints, brandPromise) {
+      const lead = companyName || "这家家政公司";
+      const serviceText = serviceType || "家政服务";
+      const trustSummary = joinItems(trustPoints.slice(0, 2), "核验和跟进");
+      const promise = brandPromise ? `把“${brandPromise}”落到细节里` : "先把放心交到客户手里";
+      return `所以${lead}做${serviceText}，会先把${trustSummary}做扎实，再安排靠谱的人上门，${promise}。`;
+    }
+
+    function createClosingLine(conversionGoal, styleKey) {
+      const style = styleLibrary[styleKey];
+      if (conversionGoal.trim()) {
+        return `如果你家里也正被这些事拖着走，现在就${conversionGoal.trim()}，先把需求发来，合适再定。`;
+      }
+      return style.ctas[0];
+    }
+
+    function createSceneLead(serviceType, targetAudience, seed) {
+      const normalized = normalizeService(serviceType);
+      const serviceScenePool = serviceScenes[normalized] || [];
+      const audienceScenePool = audienceScenes[targetAudience] || [];
+      const combined = [...serviceScenePool, ...audienceScenePool];
+      if (!combined.length) {
+        return "很多家庭真正感到需要家政帮忙的时候，往往就是家里一件件小事同时压上来的时候。";
+      }
+      return pick(combined, seed);
+    }
+
+    function createSummary(data, styleConfig, trustPoints, pains, needs) {
+      const cityText = `，适合${getLocalizedAreaName(data.cityName)}的本地沟通语境`;
+      const trustFocus = trustPoints[0] || "服务细节";
+      const painFocus = pains[0] || "客户顾虑";
+      const needFocus = needs[0] || "真实需求";
+      return `这版即梦提示词控制在${data.videoDuration}秒内，前半段先打“${painFocus}”，中段接住“${needFocus}”，后半段再用“${trustFocus}”压下顾虑，整体更偏短视频转化表达${cityText}。`;
+    }
+
+    function ensureShortVoiceover(text, maxLength = 30) {
+      const clean = String(text || "")
+        .replace(/\s+/g, "")
+        .replace(/[。！？!?]+$/g, "")
+        .replace(/，{2,}/g, "，")
+        .trim();
+
+      if (!clean) {
+        return "先把需求发来，合适再定。";
+      }
+
+      if (clean.length <= maxLength) {
+        return `${clean}。`;
+      }
+
+      const segments = clean
+        .split(/[，、；;。！？!?]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      let picked = "";
+      segments.forEach((segment) => {
+        if (!picked) {
+          picked = segment;
+          return;
+        }
+        if ((picked + "，" + segment).length <= maxLength) {
+          picked += "，" + segment;
+        }
+      });
+
+      if (!picked) {
+        picked = clean.slice(0, maxLength);
+      }
+
+      return `${picked.replace(/[，、]+$/g, "")}。`;
+    }
+
+    function createShortHookLine(pains, targetAudience) {
+      let line = "找家政，最怕请错人";
+      if (containsKeyword(pains, ["爽约", "迟到", "临时"])) {
+        line = "找家政，最怕临时掉链子";
+      } else if (containsKeyword(pains, ["陌生", "不敢", "不放心", "安全"])) {
+        line = "找家政，最怕人不靠谱";
+      } else if (targetAudience === "宝妈家庭" || targetAudience === "新生儿家庭") {
+        line = "家里有孩子，更怕请错人";
+      } else if (targetAudience === "老人照护家庭") {
+        line = "家里有老人，更怕托错人";
+      }
+      return ensureShortVoiceover(line);
+    }
+
+    function createShortPainLine(pains) {
+      const pain = pains[0] || "";
+      let line = "最怕请错人，花钱还闹心";
+      if (/爽约|迟到|临时/.test(pain)) {
+        line = "临时爽约，家里马上接不上";
+      } else if (/陌生|不敢|不放心|安全/.test(pain)) {
+        line = "人不靠谱，家里真的不放心";
+      } else if (/宣传|不一致|粗糙|做事/.test(pain)) {
+        line = "说得好听，做起来却掉线";
+      } else if (/沟通|协调|边界/.test(pain)) {
+        line = "沟通费劲，出了事更闹心";
+      } else if (/稳定|长期|换人/.test(pain)) {
+        line = "总换人，家里节奏很难稳";
+      }
+      return ensureShortVoiceover(line);
+    }
+
+    function createShortNeedLine(needs, serviceType, targetAudience) {
+      const need = needs[0] || "";
+      let line = `${serviceType || "家政服务"}，就是要省心`;
+      if (/不断档|掉链子|接住/.test(need)) {
+        line = "关键时候，服务千万别断档";
+      } else if (/安全可靠|放心/.test(need)) {
+        line = "上门的人，必须让全家放心";
+      } else if (/专业细致|别出错|带娃节奏/.test(need)) {
+        line = "细节做稳，家里才真省心";
+      } else if (/沟通顺畅|边界清楚|马上接住/.test(need)) {
+        line = "沟通顺一点，心里才放得下";
+      } else if (/尽快安排|准时|利索/.test(need)) {
+        line = "需求说完，就想尽快安排上门";
+      } else if (targetAudience === "宝妈家庭") {
+        line = "带娃和家务，真的需要有人分担";
+      } else if (targetAudience === "双职工家庭") {
+        line = "下班回家，不想再扛第二轮";
+      }
+      return ensureShortVoiceover(line);
+    }
+
+    function createShortSolutionTrustLine(trustPoints, serviceType) {
+      const trustText = joinItems(trustPoints.slice(0, 2), "核验和跟进");
+      let line = `先把${trustText}做扎实，再安排上门`;
+      if (containsKeyword(trustPoints, ["核验", "实名", "背景", "审查"])) {
+        line = "先核验再上门，全程有人跟进";
+      } else if (containsKeyword(trustPoints, ["培训", "考核"])) {
+        line = "先培训再上岗，细节更稳当";
+      } else if (containsKeyword(trustPoints, ["客服", "回访", "售后", "协调", "跟进"])) {
+        line = "服务有人跟进，出问题也能接住";
+      } else if ((serviceType || "").includes("保洁")) {
+        line = "做事有标准，服务后面也跟得上";
+      }
+      return ensureShortVoiceover(line);
+    }
+
+    function createShortClosingLine(conversionGoal, styleKey) {
+      if (conversionGoal.trim()) {
+        const cleaned = conversionGoal
+          .replace(/[。！？!?]+$/g, "")
+          .replace(/，/g, "，")
+          .trim();
+
+        if (cleaned.includes("私信")) {
+          return "先私信发需求，合适再定。";
+        }
+        if (cleaned.includes("咨询")) {
+          return "先来咨询需求，合适再定。";
+        }
+        if (cleaned.includes("预约")) {
+          return "先预约沟通，合适再安排。";
+        }
+        return ensureShortVoiceover(`${cleaned}，合适再定`);
+      }
+
+      const style = styleLibrary[styleKey];
+      const fallback = style && style.ctas && style.ctas[0] ? style.ctas[0] : "先把需求发来，合适再定";
+      return ensureShortVoiceover(fallback);
+    }
+
+    function createQuotes(styleConfig, pains, needs, trustPoints, brandPromise) {
+      const customQuotes = [];
+      if (brandPromise.trim()) {
+        customQuotes.push(brandPromise.trim());
+      }
+      if (pains[0]) {
+        customQuotes.push(`先把顾虑说出来，信任才有开始。`);
+      }
+      if (needs[0]) {
+        customQuotes.push(`客户想要的，不只是有人做事，而是真的能省心。`);
+      }
+      if (trustPoints[0]) {
+        customQuotes.push(`把放心讲清楚，比把价格讲低更重要。`);
+      }
+      return uniqueItems([...customQuotes, ...styleConfig.captions]).slice(0, 4);
+    }
+
+    function buildTimeline(data, styleConfig, generated) {
+      const slots = durationSlots[data.videoDuration] || durationSlots["30"];
+      const voiceovers = {
+        opening: createShortHookLine(data.painPoints, data.targetAudience),
+        pain: createShortPainLine(data.painPoints),
+        need: createShortNeedLine(data.customerNeeds, data.serviceType, data.targetAudience),
+        solutionTrust: createShortSolutionTrustLine(data.trustPoints.length ? data.trustPoints : defaultTrustPoints, data.serviceType),
+        closing: createShortClosingLine(data.conversionGoal, data.videoStyle)
+      };
+      let scenes;
+
+      if (slots.length === 3) {
+        scenes = [
+          {
+            title: "开场钩子",
+            visual: `画面从家庭生活细节切入，镜头扫过${generated.sceneLead}的氛围。`,
+            voiceover: voiceovers.opening
+          },
+          {
+            title: "解决方案与信任",
+            visual: `展示${data.companyName || "家政团队"}上门服务、沟通和细节执行的片段，同时叠加核验、培训、回访等关键证据。`,
+            voiceover: voiceovers.solutionTrust
+          },
+          {
+            title: "结尾转化",
+            visual: "镜头回到更松弛的家庭状态，用安静、温暖的收束画面结束。",
+            voiceover: voiceovers.closing
+          }
+        ];
+      } else if (slots.length === 4) {
+        scenes = [
+          {
+            title: "开场钩子",
+            visual: `画面从家庭生活细节切入，镜头扫过${generated.sceneLead}的氛围。`,
+            voiceover: voiceovers.opening
+          },
+          {
+            title: "痛点共鸣",
+            visual: "切换到家庭成员忙乱、犹豫或反复比较服务的细节，字幕突出担心点。",
+            voiceover: voiceovers.pain
+          },
+          {
+            title: "解决方案与信任",
+            visual: `展示${data.companyName || "家政团队"}上门服务、沟通和细节执行的片段，同时叠加核验、培训、回访等关键证据。`,
+            voiceover: voiceovers.solutionTrust
+          },
+          {
+            title: "结尾转化",
+            visual: "镜头回到更松弛的家庭状态，用安静、温暖的收束画面结束。",
+            voiceover: voiceovers.closing
+          }
+        ];
+      } else {
+        scenes = [
+          {
+            title: "开场钩子",
+            visual: `画面从家庭生活细节切入，镜头扫过${generated.sceneLead}的氛围。`,
+            voiceover: voiceovers.opening
+          },
+          {
+            title: "痛点共鸣",
+            visual: "切换到家庭成员忙乱、犹豫或反复比较服务的细节，字幕突出担心点。",
+            voiceover: voiceovers.pain
+          },
+          {
+            title: "需求落地",
+            visual: "用更柔和的日常镜头展现客户真正需要被接住的瞬间。",
+            voiceover: voiceovers.need
+          },
+          {
+            title: "解决方案与信任",
+            visual: `展示${data.companyName || "家政团队"}上门服务、沟通和细节执行的片段，同时叠加核验、培训、回访等关键证据。`,
+            voiceover: voiceovers.solutionTrust
+          },
+          {
+            title: "结尾转化",
+            visual: "镜头回到更松弛的家庭状态，用安静、温暖的收束画面结束。",
+            voiceover: voiceovers.closing
+          }
+        ];
+      }
+
+      return scenes.map((scene, index) => ({
+        time: slots[index] || slots[slots.length - 1],
+        ...scene
+      }));
+    }
+
+    function getLocalizedAreaName(cityName) {
+      const clean = cityName.trim();
+      if (!clean) {
+        return "海南";
+      }
+      return clean.includes("海南") ? clean : `海南${clean}`;
+    }
+
+    function createHainanDetails(data, seed) {
+      const region = getLocalizedAreaName(data.cityName);
+      return {
+        region,
+        home: pick(hainanLifeLibrary.homes, seed),
+        light: pick(hainanLifeLibrary.lights, seed + 1),
+        plant: pick(hainanLifeLibrary.plants, seed + 2),
+        fruit: pick(hainanLifeLibrary.fruits, seed + 3),
+        clothing: pick(hainanLifeLibrary.clothing, seed + 4),
+        breeze: pick(hainanLifeLibrary.breezes, seed + 5)
+      };
+    }
+
+    function createCharacterSet(normalizedService) {
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        return {
+          employer: "穿着淡黄色薄款家居服的年轻妈妈",
+          nanny: normalizedService === "月嫂" ? "穿着浅蓝色月嫂制服的家政阿姨" : "穿着浅蓝色育婴制服的家政阿姨",
+          baby: "穿着浅米色包屁衣的婴儿",
+          elder: "穿着浅灰色居家服的老人",
+          child: "穿着白色短袖家居服的小朋友"
+        };
+      }
+
+      if (normalizedService === "保姆") {
+        return {
+          employer: "穿着淡黄色薄款家居服的年轻妈妈",
+          nanny: "穿着浅蓝色家政制服的阿姨",
+          baby: "穿着浅米色包屁衣的婴儿",
+          elder: "穿着浅灰色居家服的老人",
+          child: "穿着白色短袖家居服的小朋友"
+        };
+      }
+
+      if (normalizedService === "保洁") {
+        return {
+          employer: "穿着浅杏色薄款家居服的女主人",
+          nanny: "穿着浅蓝色专业保洁制服的阿姨",
+          baby: "穿着浅米色包屁衣的婴儿",
+          elder: "穿着浅灰色居家服的老人",
+          child: "穿着白色短袖家居服的小朋友"
+        };
+      }
+
+      if (normalizedService === "养老陪护") {
+        return {
+          employer: "穿着米白色薄款家居服的中年家属",
+          nanny: "穿着浅蓝色护理制服的陪护阿姨",
+          baby: "穿着浅米色包屁衣的婴儿",
+          elder: "穿着浅灰色居家服的老人",
+          child: "穿着白色短袖家居服的小朋友"
+        };
+      }
+
+      return {
+        employer: "穿着淡黄色薄款家居服的年轻妈妈",
+        nanny: "穿着浅蓝色家政制服的阿姨",
+        baby: "穿着浅米色包屁衣的婴儿",
+        elder: "穿着浅灰色居家服的老人",
+        child: "穿着白色短袖家居服的小朋友"
+      };
+    }
+
+    function createQualityText(type, extra = "") {
+      const presets = {
+        macro: "微距特写镜头 (Macro shot)，浅景深 (Depth of field)，写实摄影，高画质，细节纹理清晰",
+        close: "特写镜头，浅景深 (Depth of field)，写实摄影，高画质，肤色真实",
+        medium: "中景，景深自然，写实摄影，电影级调色，高画质",
+        wide: "远景，空间层次清楚，写实摄影，电影级调色，高画质"
+      };
+      return extra ? `${presets[type] || presets.medium}，${extra}` : (presets[type] || presets.medium);
+    }
+
+    function createMovementText(type) {
+      const presets = {
+        slowPush: "镜头缓慢向前推 (Slow push in)，轻微手持摄影晃动感 (Handheld camera shake)。",
+        handheld: "轻微手持摄影晃动感 (Handheld camera shake)，运镜克制自然。",
+        static: "固定镜头，只有轻微呼吸感，不要夸张运镜。",
+        gentlePan: "轻微横移 (Gentle pan)，速度很慢，像真实观察。",
+        hold: "镜头轻轻停住，保持稳定，只保留很弱的生活感晃动。"
+      };
+      return presets[type] || presets.handheld;
+    }
+
+    function createShot(subject, environment, qualityType, movementType, extraQuality = "") {
+      return {
+        subject,
+        environment,
+        quality: createQualityText(qualityType, extraQuality),
+        movement: createMovementText(movementType)
+      };
+    }
+
+    function formatShotPrompt(blocks) {
+      return blocks
+        .filter(Boolean)
+        .slice(0, shotLabels.length)
+        .map((block, index) => [
+          `${shotLabels[index]}：`,
+          `(画面主体与细节): ${block.subject}`,
+          `(环境与光影): ${block.environment}`,
+          `(画质与风格): ${block.quality}`,
+          `(运镜指令): ${block.movement}`
+        ].join("\n"))
+        .join("\n\n");
+    }
+
+    function cleanJimengText(text) {
+      return String(text || "")
+        .replace(/[。！？!?]+/g, "")
+        .replace(/\s+/g, " ")
+        .replace(/，{2,}/g, "，")
+        .replace(/客厅客厅/g, "客厅")
+        .replace(/婴儿房婴儿房/g, "婴儿房")
+        .replace(/厨房厨房/g, "厨房")
+        .replace(/玄关玄关/g, "玄关")
+        .replace(/餐桌边餐桌边/g, "餐桌边")
+        .replace(/普通家庭客厅客厅/g, "普通家庭客厅")
+        .replace(/海南家庭客厅客厅/g, "海南家庭客厅")
+        .replace(/^，+|，+$/g, "")
+        .trim();
+    }
+
+    function formatJimengReadyPrompt(blocks, globalPrompt) {
+      return blocks
+        .filter(Boolean)
+        .slice(0, shotLabels.length)
+        .map((block, index) => {
+          const stitched = [
+            globalPrompt,
+            block.subject,
+            block.environment,
+            `${block.movement} ${block.quality}`
+          ]
+            .map((part) => cleanJimengText(part))
+            .filter(Boolean)
+            .join("，");
+          return `${shotLabels[index]}： ${stitched}。`;
+        })
+        .join("\n");
+    }
+
+    function createOpeningShots(local, normalizedService, characters) {
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        return [
+          createShot(
+            `原木色茶几上散落着一个彩色婴儿摇铃、一条微皱的纯棉纱布巾和半瓶没喝完的婴儿奶，旁边放着${local.fruit}。`,
+            `${local.region}普通家庭客厅，${local.light}，落地窗白纱被背景虚化，${local.plant}若隐若现。`,
+            "macro",
+            "slowPush"
+          ),
+          createShot(
+            `${characters.employer}抱着${characters.baby}在客厅里轻轻踱步，头发微乱，神情带一点疲惫。`,
+            `${local.home}，${local.breeze}，沙发扶手上搭着没来得及叠好的小毯子。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保姆") {
+        return [
+          createShot(
+            `餐桌上放着孩子的水杯、老人常用药盒和还没来得及收起的早餐盘，旁边还有${local.fruit}。`,
+            `${local.region}普通家庭客厅，${local.light}照在桌面上，背景是被虚化的白纱窗帘。`,
+            "macro",
+            "slowPush"
+          ),
+          createShot(
+            `${characters.employer}站在餐桌边整理孩子书包，肩膀有些绷紧。`,
+            `${local.home}里，${characters.elder}坐在沙发边安静等着照应，${local.breeze}。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保洁") {
+        return [
+          createShot(
+            `茶几边放着待洗衣篮，厨房台面留着细碎水渍和刚切开的热带水果。`,
+            `${local.region}普通家庭客厅，${local.light}照在木地板上，背景略乱但被虚化。`,
+            "macro",
+            "slowPush"
+          ),
+          createShot(
+            `${characters.employer}站在客厅和厨房之间看着还没收拾完的角落，轻轻停住。`,
+            `${local.home}，${local.breeze}，窗边能看到${local.plant}。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "养老陪护") {
+        return [
+          createShot(
+            `沙发边的小桌上放着温水杯、药盒、老花镜和折好的薄毯。`,
+            `${local.region}普通家庭客厅，${local.light}落在桌沿，背景是安静的白纱窗帘。`,
+            "macro",
+            "slowPush"
+          ),
+          createShot(
+            `${characters.employer}站在沙发边看着${characters.elder}，神情里有一点不敢松懈。`,
+            `${local.home}通风明亮，${local.breeze}，空间真实不过度精致。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      return [
+        createShot(
+          `茶几上留着孩子玩具、随手放下的生活用品和${local.fruit}。`,
+          `${local.region}普通家庭客厅，${local.light}，白纱窗帘和${local.plant}被浅浅虚化。`,
+          "macro",
+          "slowPush"
+        ),
+        createShot(
+          `${characters.employer}站在客厅里短暂停顿，神情有些疲惫。`,
+          `${local.home}，${local.breeze}，真实生活痕迹自然保留。`,
+          "medium",
+          "handheld"
+        )
+      ];
+    }
+
+    function createPainShots(local, pain, normalizedService, characters) {
+      if (/爽约|迟到|临时/.test(pain)) {
+        return [
+          createShot(
+            "墙上时钟已经快到约定时间，玄关边放着收好的妈咪包和外出拖鞋，入户门保持关闭。",
+            `${local.region}家庭玄关，${local.light}，走廊背景虚化，空气有一点等待落空的停顿感。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.employer}单手抱着${characters.baby}低头看手机，眉头轻轻皱起。`,
+            `${local.home}客厅，手机页面虚化不可读，${local.breeze}。`,
+            "medium",
+            "hold"
+          )
+        ];
+      }
+
+      if (/陌生|不敢|不放心|放心/.test(pain)) {
+        return [
+          createShot(
+            `${characters.employer}坐在沙发边，下意识把宝宝的小被子轻轻抚平。`,
+            `${local.home}里很安静，${local.light}落在她的手背上，背景是被虚化的婴儿床。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            `${characters.employer}握着杯沿停顿片刻，朝门口看去。`,
+            `${local.region}普通家庭客厅，${local.breeze}，空气里有一点犹豫感。`,
+            "close",
+            "static"
+          )
+        ];
+      }
+
+      if (/宣传|不一致|粗糙|做事|服务/.test(pain)) {
+        return [
+          createShot(
+            "一只手轻轻抹过洗手台边没擦净的水渍，指尖停顿了一下。",
+            `${local.home}卫生间或厨房角落，${local.light}自然，背景保持虚化。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.employer}回头看向客厅，表情有一点无奈。`,
+            `${local.home}，${local.breeze}，真实生活的忙乱感被保留下来。`,
+            "medium",
+            "hold"
+          )
+        ];
+      }
+
+      if (normalizedService === "养老陪护") {
+        return [
+          createShot(
+            `${characters.elder}起身时动作缓慢，手扶着沙发边缘停了一下。`,
+            `${local.home}客厅，${local.light}柔和，背景是安静的茶几和药盒。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            "茶几上的药盒、纸巾和温水杯摆得很满，细节显得一点也不能松懈。",
+            `${local.region}普通家庭客厅，${local.breeze}，生活痕迹清楚可见。`,
+            "macro",
+            "slowPush"
+          )
+        ];
+      }
+
+      return [
+        createShot(
+          `${characters.employer}站在客厅里短暂停住，像是一下子顾不过来。`,
+          `${local.home}，${local.light}柔和，背景里留着真实的日常小杂物。`,
+          "medium",
+          "hold"
+        ),
+        createShot(
+          "桌面、沙发和玄关都留着还没顾得上整理的小物件。",
+          `${local.region}普通家庭环境，${local.breeze}，空间真实不过度精修。`,
+          "macro",
+          "slowPush"
+        )
+      ];
+    }
+
+    function createNeedShots(local, need, normalizedService, characters) {
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        return [
+          createShot(
+            "消毒好的奶瓶、温水壶、纱布巾和宝宝换洗衣物被分区摆放整齐。",
+            `${local.home}餐边柜台面干净利落，${local.light}，物件边缘有一圈高光，背景浅虚化。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}半蹲在${characters.employer}身旁认真听她说话，双手自然交叠。`,
+            `${local.region}家庭客厅，${local.breeze}，画面里只保留少量婴儿用品作陪衬。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保姆") {
+        return [
+          createShot(
+            "早餐餐具、孩子水壶和老人常用物品被分区放好，桌面显得顺手又清楚。",
+            `${local.home}餐桌边，${local.light}自然通透，背景是虚化的白纱窗帘。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}站在餐桌边认真听${characters.employer}交代重点，目光专注。`,
+            `${local.region}家庭餐厅，${local.breeze}，不出现任何可读文字。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保洁") {
+        return [
+          createShot(
+            "厨房台面被擦出干净通透的反光，龙头和玻璃边缘显得很清爽。",
+            `${local.home}厨房，${local.light}通透自然，清洁工具只露出一角。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}站在客厅边角认真看着还需要处理的区域，动作稳稳的。`,
+            `${local.region}家庭客厅，${local.breeze}，空间真实、有使用痕迹。`,
+            "medium",
+            "hold"
+          )
+        ];
+      }
+
+      if (normalizedService === "养老陪护") {
+        return [
+          createShot(
+            "温水、药盒、毛巾和常用拖鞋被整齐放在老人抬手就能拿到的位置。",
+            `${local.home}客厅角落，${local.light}柔和，物件摆放贴近日常。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}面对${characters.employer}安静站着，认真听她说明照护习惯。`,
+            `${local.region}家庭客厅，${local.breeze}，气氛平和不紧张。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (/沟通|协调|边界/.test(need)) {
+        return [
+          createShot(
+            `${characters.employer}和${characters.nanny}面对面坐着，正在认真听彼此说话。`,
+            `${local.home}客厅，桌上只放着一杯水和几样日常物件，${local.light}柔和。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            "桌上放着整理整齐的服务物品和一支笔，细节显得很有章法。",
+            `${local.region}普通家庭客厅，背景虚化，不出现可读文字。`,
+            "macro",
+            "slowPush"
+          )
+        ];
+      }
+
+      return [
+        createShot(
+          "家里最常用的生活用品被重新理顺，摆放顺手又清楚。",
+          `${local.home}，${local.light}自然透进来，真实居家气息被保留。`,
+          "close",
+          "static"
+        ),
+        createShot(
+          `${characters.nanny}站在客厅里认真听${characters.employer}确认今天的重点安排。`,
+          `${local.region}普通家庭环境，${local.breeze}，画面安静克制。`,
+          "medium",
+          "handheld"
+        )
+      ];
+    }
+
+    function createSolutionShots(local, normalizedService, characters) {
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        return [
+          createShot(
+            `${characters.nanny}在玄关弯腰换上室内拖鞋，动作利落。`,
+            `${local.region}普通家庭玄关，${local.light}从客厅延伸过来，鞋柜和门垫保持真实生活质感。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}正将婴儿毛巾按颜色分类叠放整齐，背景里是${characters.employer}轻轻点头。`,
+            `明亮的婴儿房一角，${local.breeze}，桌面只保留少量婴儿用品。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保姆") {
+        return [
+          createShot(
+            `${characters.nanny}在玄关弯腰换上室内拖鞋，动作干净利落。`,
+            `${local.region}普通家庭玄关，${local.light}柔和，鞋柜边有真实使用痕迹。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}把孩子水壶和老人药盒分开放到固定位置，动作很稳。`,
+            `${local.home}餐桌边，${local.breeze}，背景里能看到${characters.employer}把水杯轻轻放回桌面。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "保洁") {
+        return [
+          createShot(
+            `${characters.nanny}在玄关弯腰把清洁工具整齐靠墙放好。`,
+            `${local.region}普通家庭玄关，${local.light}自然，地面和墙角有真实家居纹理。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}沿着厨房台面单方向擦拭，动作稳定。`,
+            `${local.home}厨房，${local.breeze}，背景略虚化，保留真实水汽和反光。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      if (normalizedService === "养老陪护") {
+        return [
+          createShot(
+            `${characters.nanny}在玄关弯腰换上室内拖鞋，动作轻缓。`,
+            `${local.region}普通家庭玄关，${local.light}温和，环境安静。`,
+            "close",
+            "static"
+          ),
+          createShot(
+            `${characters.nanny}把温水杯轻轻放到${characters.elder}手边，动作很稳。`,
+            `${local.home}客厅，${local.breeze}，背景里是坐着的${characters.employer}。`,
+            "medium",
+            "handheld"
+          )
+        ];
+      }
+
+      return [
+        createShot(
+          `${characters.nanny}在玄关弯腰换上室内拖鞋，动作利落。`,
+          `${local.region}普通家庭玄关，${local.light}柔和，环境真实。`,
+          "close",
+          "static"
+        ),
+        createShot(
+          `${characters.nanny}把桌上的生活用品重新摆放整齐，动作不急不慢。`,
+          `${local.home}，${local.breeze}，背景中能看到${characters.employer}向后靠在沙发背上。`,
+          "medium",
+          "handheld"
+        )
+      ];
+    }
+
+    function materializeTrustAction(trustPoint, normalizedService, characters, local) {
+      if (/核验|实名|审查/.test(trustPoint)) {
+        return createShot(
+          `一双整洁的手把盖有蓝色印章的档案夹递到${characters.employer}手边。`,
+          `${local.home}客厅，${local.light}照在档案夹边角上，背景虚化，不出现清晰文字。`,
+          "close",
+          "static"
+        );
+      }
+
+      if (/体检|报告/.test(trustPoint)) {
+        return createShot(
+          `${characters.nanny}正用平板向${characters.employer}展示体检报告页面。`,
+          `${local.region}家庭客厅，屏幕内容虚化不可读，${local.breeze}，环境整洁自然。`,
+          "medium",
+          "hold"
+        );
+      }
+
+      if (/培训|考核/.test(trustPoint)) {
+        if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+          return createShot(
+            `培训空间里，${characters.nanny}正在整齐地叠放多件婴儿纯棉衣服，旁边老师低头在记录本上写字。`,
+            "明亮的培训教室，白墙和桌椅保持简洁，背景不要出现可读文字。",
+            "medium",
+            "handheld"
+          );
+        }
+
+        if (normalizedService === "养老陪护") {
+          return createShot(
+            `培训空间里，${characters.nanny}正在整齐摆放毛巾、温水杯和护理用品，旁边老师低头记录。`,
+            "明亮培训教室，环境干净，背景简单克制。",
+            "medium",
+            "handheld"
+          );
+        }
+
+        return createShot(
+          `培训空间里，${characters.nanny}正在按颜色整齐叠放多块清洁毛巾，旁边老师低头做笔记。`,
+          "明亮培训教室，环境简洁，不出现可读文字。",
+          "medium",
+          "handheld"
+        );
+      }
+
+      if (/客服|跟进|回访|售后|协调/.test(trustPoint)) {
+        return createShot(
+          "客服坐在明亮工位上戴着耳机认真记录回访要点。",
+          "办公区干净明亮，桌上有简单资料夹，但不要出现可读文字和品牌字样。",
+          "medium",
+          "hold"
+        );
+      }
+
+      if (/记录|留痕/.test(trustPoint)) {
+        return createShot(
+          "一只手在服务记录表上轻轻打勾，旁边放着整齐的资料夹。",
+          "桌面特写，背景虚化，不出现可读汉字。",
+          "macro",
+          "slowPush"
+        );
+      }
+
+      return createShot(
+        `${characters.nanny}安静站着听${characters.employer}确认服务细节，目光专注。`,
+        `${local.home}客厅，${local.light}柔和，桌上只留少量资料和工具。`,
+        "medium",
+        "hold"
+      );
+    }
+
+    function createTrustShots(local, trustPoints, normalizedService, characters) {
+      const topTrustPoints = trustPoints.length ? trustPoints.slice(0, 2) : defaultTrustPoints.slice(0, 2);
+      const shots = topTrustPoints.map((item) => materializeTrustAction(item, normalizedService, characters, local));
+      if (shots.length < 2) {
+        shots.push(createShot(
+          `${characters.employer}看着平板上的服务流程页，轻轻点头。`,
+          `${local.home}客厅，${local.breeze}，平板内容虚化不可读。`,
+          "medium",
+          "hold"
+        ));
+      }
+      return shots;
+    }
+
+    function createClosingShots(local, normalizedService, characters) {
+      if (normalizedService === "育儿嫂" || normalizedService === "月嫂") {
+        return [
+          createShot(
+            `${characters.employer}向后靠在沙发背上，慢慢吃一块冰镇芒果。`,
+            `${local.home}已经被理顺，柔和的光线照在木地板和浅色沙发上，桌边留着${local.fruit}。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            `${characters.baby}安静睡在婴儿床里，小手自然搭在身侧。`,
+            `${local.home}婴儿床边，白纱窗帘被海风轻轻吹动，背景安静柔和。`,
+            "close",
+            "slowPush"
+          )
+        ];
+      }
+
+      if (normalizedService === "保姆") {
+        return [
+          createShot(
+            `${characters.employer}坐在餐桌边慢慢喝一口水，把杯子轻轻握在手里。`,
+            `${local.home}餐桌边，${characters.child}和${characters.elder}都在背景里安静待着，${local.light}明亮。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            `${characters.child}坐在餐桌边安静吃东西，动作自然。`,
+            `${local.region}普通家庭餐厅，窗外热带绿植隐约可见，空间被重新理顺。`,
+            "medium",
+            "slowPush"
+          )
+        ];
+      }
+
+      if (normalizedService === "保洁") {
+        return [
+          createShot(
+            `${characters.employer}赤脚踩过干净的木地板，表情轻轻松了一口气。`,
+            `${local.home}客厅，阳光照进整洁空间，水果盘和抱枕摆放自然。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            "厨房台面和玻璃反射出干净通透的自然光，空间显得很顺手。",
+            `${local.region}普通家庭厨房，${local.breeze}，没有刻意的广告棚拍感。`,
+            "wide",
+            "slowPush"
+          )
+        ];
+      }
+
+      if (normalizedService === "养老陪护") {
+        return [
+          createShot(
+            `${characters.elder}坐在光线柔和的位置慢慢喝水，动作安稳。`,
+            `${local.home}客厅，${local.light}自然，茶几和药盒摆放整齐。`,
+            "medium",
+            "hold"
+          ),
+          createShot(
+            `${characters.employer}坐在沙发边轻轻长舒一口气。`,
+            `${local.region}普通家庭客厅，通风明亮，白纱窗帘轻轻晃动。`,
+            "medium",
+            "slowPush"
+          )
+        ];
+      }
+
+      return [
+        createShot(
+          `${characters.employer}坐在沙发边轻轻靠住靠垫，把水杯放回桌面。`,
+          `${local.home}，${local.light}柔和，桌面和客厅都被理顺。`,
+          "medium",
+          "hold"
+        ),
+        createShot(
+          `${characters.nanny}把最后一件生活用品摆回合适位置，动作很轻。`,
+          `${local.region}普通家庭环境，${local.breeze}，画面没有夸张营销感。`,
+          "medium",
+          "slowPush"
+        )
+      ];
+    }
+
+    function createReputationShots(local, characters) {
+      return [
+        createShot(
+          "客服坐在工位前低头在回访记录本上写字，耳机贴在耳侧。",
+          "明亮办公区，桌面只放着简单资料夹，背景虚化，不出现品牌文字。",
+          "medium",
+          "hold"
+        ),
+        createShot(
+          `${characters.employer}坐在沙发边轻轻点头微笑。`,
+          `${local.home}里已经明显整洁下来，${local.fruit}和${local.plant}一起入画。`,
+          "medium",
+          "slowPush"
+        )
+      ];
+    }
+
+    function createCombinedSolutionTrustShots(local, trustPoints, normalizedService, characters) {
+      const solutionShots = createSolutionShots(local, normalizedService, characters);
+      const trustShots = createTrustShots(local, trustPoints, normalizedService, characters);
+      return [solutionShots[1] || solutionShots[0], trustShots[0]];
+    }
+
+    function createGlobalPrompt(data, styleConfig) {
+      const region = getLocalizedAreaName(data.cityName);
+      const styleMap = {
+        "暖心纪实": "生活纪录片质感",
+        "客户故事": "真实家庭故事短片感",
+        "专业安心": "写实服务广告片质感",
+        "邻里口碑": "社区口碑短视频质感"
+      };
+      return [
+        `${region}真实中国家庭`,
+        styleMap[styleConfig.label] || "生活纪录片质感",
+        "暖色自然光，肤色真实",
+        "丁达尔效应 (Tyndall effect)，光线柔和通透",
+        "白纱窗帘、热带绿植、轻薄透气家居服、热带水果",
+        "细节克制不摆拍，写实摄影，电影级调色，高画质，8k"
+      ].join("，");
+    }
+
+    function createNegativePrompt() {
+      return [
+        "3d",
+        "cg",
+        "render",
+        "text",
+        "watermark",
+        "logo",
+        "unnatural lighting",
+        "smooth skin",
+        "plastic",
+        "deformed hands",
+        "bad fingers",
+        "extra fingers",
+        "欧美家庭场景",
+        "豪宅摆拍感",
+        "过度磨皮",
+        "廉价营销感",
+        "可读汉字",
+        "公司名称直接出现在画面里"
+      ].join(", ");
+    }
+
+    function createScenePrompt(scene, data, styleConfig, trustPoints, quotes, index) {
+      const normalizedService = normalizeService(data.serviceType);
+      const local = createHainanDetails(data, index + data.serviceType.length + data.targetAudience.length);
+      const characters = createCharacterSet(normalizedService);
+      const quote = quotes[index % quotes.length] || "把安心感放进每一个真实细节里。";
+      const pain = data.painPoints[index % Math.max(data.painPoints.length, 1)] || "";
+      const need = data.customerNeeds[index % Math.max(data.customerNeeds.length, 1)] || "";
+
+      let shots;
+      switch (scene.title) {
+        case "开场钩子":
+          shots = createOpeningShots(local, normalizedService, characters);
+          break;
+        case "痛点共鸣":
+          shots = createPainShots(local, pain, normalizedService, characters);
+          break;
+        case "需求落地":
+          shots = createNeedShots(local, need, normalizedService, characters);
+          break;
+        case "解决方案":
+          shots = createSolutionShots(local, normalizedService, characters);
+          break;
+        case "信任证据":
+          shots = createTrustShots(local, trustPoints, normalizedService, characters);
+          break;
+        case "解决方案与信任":
+          shots = createCombinedSolutionTrustShots(local, trustPoints, normalizedService, characters);
+          break;
+        case "口碑补强":
+          shots = createReputationShots(local, characters);
+          break;
+        case "结尾转化":
+          shots = createClosingShots(local, normalizedService, characters);
+          break;
+        default:
+          shots = [
+            createShot(
+              `${characters.employer}在${local.home}里安静停住，动作自然。`,
+              `${local.region}普通家庭环境，${local.light}柔和，保留真实生活痕迹。`,
+              "medium",
+              "hold"
+            ),
+            createShot(
+              `${local.fruit}和${local.plant}一起出现在桌边或窗边，带出真实海南生活感。`,
+              `${local.region}普通家庭客厅，${local.breeze}，背景自然虚化。`,
+              "macro",
+              "slowPush"
+            )
+          ];
+      }
+
+      return {
+        ...scene,
+        prompt: formatShotPrompt(shots),
+        shotBlocks: shots,
+        subtitle: quote
+      };
+    }
+
+    function renderList(container, items) {
+      container.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        container.appendChild(li);
+      });
+    }
+
+    function renderTags(data, styleConfig) {
+      const tags = [
+        styleConfig.label,
+        data.serviceType || "家政服务",
+        data.targetAudience,
+        `${data.videoDuration} 秒`,
+        getLocalizedAreaName(data.cityName)
+      ];
+      metaTags.innerHTML = "";
+      tags.forEach((item) => {
+        const span = document.createElement("span");
+        span.className = "tag";
+        span.textContent = item;
+        metaTags.appendChild(span);
+      });
+    }
+
+    function buildSceneDirectPaste(scene) {
+      return [
+        "即梦直贴版：",
+        scene.jimengPrompt,
+        "",
+        "字幕建议：",
+        scene.subtitle
+      ].join("\n");
+    }
+
+    function normalizeNarrationSentence(text) {
+      const clean = String(text || "")
+        .replace(/\s+/g, "")
+        .replace(/[。！？!?]+$/g, "")
+        .trim();
+      return clean ? `${clean}。` : "";
+    }
+
+    function buildFullNarration(timeline) {
+      const expansionMap = {
+        "开场钩子": "说到底，最怕的还是把人请进家里以后，心里还是悬着。",
+        "痛点共鸣": "很多人不是不想找，而是怕请错人以后更麻烦。",
+        "需求落地": "客户真正想要的，其实就是有人把家里的节奏稳稳接住。",
+        "解决方案与信任": "把关键环节做在前面，安心感才会真的落下来。",
+        "结尾转化": "先把需求说清楚，再看合不合适，会更省心。"
+      };
+
+      return (timeline || [])
+        .map((scene) => {
+          const base = normalizeNarrationSentence(scene.voiceover);
+          const extra = normalizeNarrationSentence(expansionMap[scene.title] || "");
+          if (!base) {
+            return extra;
+          }
+          if (!extra) {
+            return base;
+          }
+          return `${base}${extra}`;
+        })
+        .filter(Boolean)
+        .join("");
+    }
+
+    function buildSceneCopyPackage(scene, globalPrompt, negativePrompt) {
+      return [
+        "全局主提示词：",
+        globalPrompt,
+        "",
+        "即梦负面提示词：",
+        negativePrompt,
+        "",
+        `当前分镜：${scene.time}｜${scene.title}`,
+        buildSceneDirectPaste(scene)
+      ].join("\n");
+    }
+
+    function createSceneBlock(label, text, copyLabel, onCopy) {
+      const block = document.createElement("div");
+      block.className = "scene-block";
+
+      const head = document.createElement("div");
+      head.className = "scene-block-head";
+
+      const title = document.createElement("span");
+      title.textContent = label;
+
+      head.appendChild(title);
+
+      if (copyLabel && onCopy) {
+        const button = document.createElement("button");
+        button.className = "copy-mini";
+        button.type = "button";
+        button.textContent = copyLabel;
+        button.addEventListener("click", onCopy);
+        head.appendChild(button);
+      }
+
+      const content = document.createElement("pre");
+      content.className = "scene-block-text";
+      content.textContent = text;
+
+      block.appendChild(head);
+      block.appendChild(content);
+      return block;
+    }
+
+    function renderTimeline(items, globalPrompt, negativePrompt) {
+      timelineList.innerHTML = "";
+      items.forEach((item) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "timeline-item";
+
+        const time = document.createElement("div");
+        time.className = "timeline-time";
+        time.textContent = item.time;
+
+        const body = document.createElement("div");
+        body.className = "timeline-body";
+
+        const head = document.createElement("div");
+        head.className = "timeline-head";
+
+        const title = document.createElement("strong");
+        title.textContent = item.title;
+
+        const actions = document.createElement("div");
+        actions.className = "timeline-actions";
+
+        const copySceneBtn = document.createElement("button");
+        copySceneBtn.className = "copy-mini";
+        copySceneBtn.type = "button";
+        copySceneBtn.textContent = "复制本分镜";
+        copySceneBtn.addEventListener("click", () => {
+          const scenePackage = buildSceneCopyPackage(item, globalPrompt, negativePrompt);
+          copyToClipboard(
+            scenePackage,
+            `已复制 ${item.time} 的分镜提示词，内容里已包含全局主提示词和负面提示词。`,
+            "复制失败了，请手动选择当前分镜内容复制。"
+          );
+        });
+
+        const sceneBlocks = document.createElement("div");
+        sceneBlocks.className = "scene-blocks";
+
+        const directPasteText = buildSceneDirectPaste(item);
+        const jimengBlock = createSceneBlock(
+          "即梦直贴版",
+          directPasteText,
+          "复制直贴版",
+          () => {
+            copyToClipboard(
+              directPasteText,
+              `已复制 ${item.time} 的即梦直贴版，里面已包含提示词和字幕建议。`,
+              "复制失败了，请手动选择即梦直贴版复制。"
+            );
+          }
+        );
+
+        actions.appendChild(copySceneBtn);
+        sceneBlocks.appendChild(jimengBlock);
+
+        head.appendChild(title);
+        head.appendChild(actions);
+        body.appendChild(head);
+        body.appendChild(sceneBlocks);
+        wrapper.appendChild(time);
+        wrapper.appendChild(body);
+        timelineList.appendChild(wrapper);
+      });
+    }
+
+    function buildPromptText(data, styleConfig, timeline, negativePrompt, globalPrompt, fullNarration) {
+      const title = `${fixedCompanyName}${data.serviceType ? ` ${data.serviceType}` : ""}即梦视频提示词包`;
+      const lines = [
+        `标题：${title}`,
+        "适配平台：即梦（优先适配），兼容可灵等国内 AI 视频生成工具",
+        `风格：${styleConfig.label}`,
+        `目标客户：${data.targetAudience}`,
+        `建议时长：${data.videoDuration} 秒`,
+        `后期贴片名称：${fixedCompanyName}`,
+        `适用区域：${getLocalizedAreaName(data.cityName)}`,
+        "",
+        "使用提醒：",
+        "把全局主提示词放在最前面一次即可；分镜画面提示词只保留具体动作、物件和镜头；同一个镜头只保留一个核心动作；核心人物服装描述保持前后一致；公司名称与 Logo 建议后期再贴，不要直接让 AI 生成；实操时优先复制每个镜头的“即梦直贴版”，它已经按“全局主提示词 + 画面主体与细节 + 环境与光影 + 运镜与画质参数”的顺序自动缝合好了。",
+        "",
+        "全局主提示词（即梦每次生成先带一次）：",
+        globalPrompt,
+        "",
+        "即梦负面提示词：",
+        negativePrompt,
+        "",
+        "分镜画面提示词（只写具体镜头和动作）："
+      ];
+
+      timeline.forEach((scene) => {
+        lines.push(`${scene.time}｜${scene.title}`);
+        lines.push(`画面提示词：${scene.prompt}`);
+        lines.push(`即梦直贴版：${scene.jimengPrompt}`);
+        lines.push(`字幕建议：${scene.subtitle}`);
+        lines.push("");
+      });
+
+      lines.push("整条视频旁白建议：");
+      lines.push(fullNarration);
+
+      return lines.join("\n");
+    }
+
+    function collectFormData() {
+      return {
+        companyName: fixedCompanyName,
+        serviceType: serviceTypeInput.value.trim(),
+        targetAudience: targetAudienceInput.value,
+        videoStyle: videoStyleInput.value,
+        videoDuration: videoDurationInput.value,
+        conversionGoal: conversionGoalInput.value.trim(),
+        painPoints: splitItems(painPointsInput.value),
+        customerNeeds: splitItems(customerNeedsInput.value),
+        trustPoints: splitItems(trustPointsInput.value),
+        brandPromise: brandPromiseInput.value.trim(),
+        cityName: cityNameInput.value.trim()
+      };
+    }
+
+    function generateScriptBundle(data) {
+      const styleConfig = styleLibrary[data.videoStyle] || styleLibrary.warm;
+      const realNeeds = deriveRealNeeds(
+        data.customerNeeds,
+        data.painPoints,
+        data.serviceType,
+        data.targetAudience
+      );
+      const promptData = {
+        ...data,
+        customerNeeds: realNeeds
+      };
+      const seedSource = [
+        data.companyName.length,
+        data.serviceType.length,
+        data.painPoints.length * 2,
+        data.customerNeeds.length * 3,
+        data.trustPoints.length * 5
+      ].reduce((sum, current) => sum + current, 0);
+
+      const trustPoints = data.trustPoints.length ? data.trustPoints : defaultTrustPoints;
+      const hook = pick(styleConfig.hooks, seedSource % styleConfig.hooks.length);
+      const painLine = createPainLine(data.painPoints);
+      const sceneLead = createSceneLead(data.serviceType, data.targetAudience, seedSource + 1);
+      const needLine = createNeedLine(realNeeds, data.serviceType);
+      const solutionLine = createSolutionLine(data.companyName, data.serviceType, trustPoints, data.brandPromise);
+      const trustLine = createTrustLine(data.companyName, trustPoints);
+      const closingLine = createClosingLine(data.conversionGoal, data.videoStyle);
+      const summary = createSummary(data, styleConfig, trustPoints, data.painPoints, realNeeds);
+      const trustHighlights = uniqueItems([
+        `优先强调：${trustPoints[0] || defaultTrustPoints[0]}`,
+        `服务过程中最好拍到：${trustPoints[1] || defaultTrustPoints[1]}`,
+        `售后表达建议：${trustPoints[2] || defaultTrustPoints[2]}`
+      ]).slice(0, 3);
+
+      const quotes = createQuotes(styleConfig, data.painPoints, realNeeds, trustPoints, data.brandPromise);
+      const narrationParts = {
+        hook,
+        painLine,
+        sceneLead,
+        needLine,
+        solutionLine,
+        trustLine,
+        closingLine
+      };
+      const rawTimeline = buildTimeline(promptData, styleConfig, narrationParts)
+        .map((scene, index) => createScenePrompt(scene, promptData, styleConfig, trustPoints, quotes, index));
+      const globalPrompt = createGlobalPrompt(data, styleConfig, trustPoints);
+      const timeline = rawTimeline.map((scene) => ({
+        ...scene,
+        jimengPrompt: formatJimengReadyPrompt(scene.shotBlocks, globalPrompt)
+      }));
+      const negativePrompt = createNegativePrompt();
+      const fullNarration = buildFullNarration(timeline);
+      const script = buildPromptText(
+        data,
+        styleConfig,
+        timeline,
+        negativePrompt,
+        globalPrompt,
+        fullNarration
+      );
+
+      return {
+        styleConfig,
+        title: `${fixedCompanyName}${data.serviceType ? `·${data.serviceType}` : ""}${styleConfig.label}提示词`,
+        summary,
+        realNeedItems: formatRealNeedItems(realNeeds),
+        trustHighlights,
+        quotes,
+        globalPrompt,
+        negativePrompt,
+        fullNarration,
+        timeline,
+        script,
+        footer: `${styleConfig.summary} 这版已经把抽象情绪尽量翻译成具体动作、物件和海南家庭细节，建议继续优先保留真实居家痕迹，不要把画面做得太像广告棚拍。`
+      };
+    }
+
+    function renderBundle(data, bundle) {
+      scriptTitle.textContent = bundle.title;
+      scriptSummary.textContent = bundle.summary;
+      globalPromptText.textContent = bundle.globalPrompt;
+      negativePromptText.textContent = bundle.negativePrompt;
+      fullNarrationText.textContent = bundle.fullNarration;
+      footerNote.textContent = bundle.footer;
+      renderList(needInsightList, bundle.realNeedItems);
+      renderList(trustList, bundle.trustHighlights);
+      renderList(quoteList, bundle.quotes);
+      renderTimeline(bundle.timeline, bundle.globalPrompt, bundle.negativePrompt);
+      renderTags(data, bundle.styleConfig);
+      latestBundle = bundle;
+      statusText.textContent = "已生成分镜即梦直贴版，并把整条视频旁白单独汇总好了。";
+    }
+
+    function resetOutput() {
+      scriptTitle.textContent = "还没有生成提示词";
+      scriptSummary.textContent = "生成后，这里会先告诉你这版即梦提示词主打什么情绪、适合什么人群，以及它最核心的信任表达。";
+      globalPromptText.textContent = "生成后这里会显示可单独复制的全局主提示词。";
+      negativePromptText.textContent = "生成后这里会显示可单独复制的负面提示词。";
+      fullNarrationText.textContent = "生成后这里会汇总整条视频的完整旁白，不再按分镜拆开。";
+      metaTags.innerHTML = [
+        '<span class="tag">生活场景</span>',
+        '<span class="tag">信任建立</span>',
+        '<span class="tag">即梦优先</span>'
+      ].join("");
+      needInsightList.innerHTML = "<li>生成后会结合你填的原始需求和顾虑，自动提炼出客户真正想解决的问题。</li>";
+      trustList.innerHTML = [
+        "<li>生成后会自动提炼出值得放在视频里的服务细节，帮助观众更快建立信任。</li>",
+        "<li>如果你没填服务亮点，页面也会补充常见的家政信任表达作参考。</li>"
+      ].join("");
+      quoteList.innerHTML = "<li>生成后会给出适合叠在画面上的短句，用来强化真实感和信任感。</li>";
+      timelineList.innerHTML = [
+        '<div class="timeline-item">',
+        '  <div class="timeline-time">等待生成</div>',
+        '  <div class="timeline-body">',
+        '    <strong>先输入上方素材</strong>',
+        '    <p>生成后这里会自动拆成分镜提示词时间轴，方便你直接喂给即梦平台。</p>',
+        "  </div>",
+        "</div>"
+      ].join("");
+      footerNote.textContent = "建议把最具体的服务细节放在中段提示词里，把最柔软的一句信任表达放在结尾镜头，即梦生成时会更容易兼顾生活感和转化感。";
+      latestBundle = null;
+    }
+
+    function fillSample() {
+      companyNameInput.value = fixedCompanyName;
+      serviceTypeInput.value = "育儿嫂";
+      targetAudienceInput.value = "宝妈家庭";
+      videoStyleInput.value = "warm";
+      videoDurationInput.value = "30";
+      conversionGoalInput.value = "先私信咨询，再预约匹配";
+      painPointsInput.value = [
+        "担心阿姨临时爽约，家里一下没人接得上",
+        "怕宣传得很好，真正上门后做事粗糙",
+        "家里有孩子，不敢轻易让陌生人长期进入家里"
+      ].join("\n");
+      customerNeedsInput.value = [
+        "希望阿姨带娃细致，做事有分寸",
+        "希望长期稳定，不要频繁换人",
+        "希望沟通顺畅，遇到问题有人及时协调"
+      ].join("\n");
+      trustPointsInput.value = [
+        "阿姨实名核验和背景审查",
+        "岗前培训，包含带娃卫生和沟通规范",
+        "客服全程跟进，不满意可快速协调更换"
+      ].join("\n");
+      brandPromiseInput.value = "把家交给我们，先把放心给你";
+      cityNameInput.value = "海南海口";
+      statusText.textContent = "示例素材已填充，可以直接生成即梦提示词，也可以继续改成你自己的内容。";
+    }
+
+    function clearForm() {
+      form.reset();
+      companyNameInput.value = fixedCompanyName;
+      serviceTypeInput.value = "";
+      conversionGoalInput.value = "";
+      painPointsInput.value = "";
+      customerNeedsInput.value = "";
+      trustPointsInput.value = "";
+      brandPromiseInput.value = "";
+      cityNameInput.value = "海南";
+      resetOutput();
+      statusText.textContent = "输入已清空，重新填写后可再次生成即梦提示词。";
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const data = collectFormData();
+      const bundle = generateScriptBundle(data);
+      renderBundle(data, bundle);
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      fillSample();
+      const data = collectFormData();
+      const bundle = generateScriptBundle(data);
+      renderBundle(data, bundle);
+    });
+
+    clearBtn.addEventListener("click", () => {
+      clearForm();
+    });
+
+    copyGlobalBtn.addEventListener("click", () => {
+      if (!latestBundle) {
+        statusText.textContent = "还没有可复制的全局主提示词，先生成内容再试。";
+        return;
+      }
+      copyToClipboard(
+        latestBundle.globalPrompt,
+        "全局主提示词已复制。",
+        "复制失败了，请手动选择全局主提示词复制。"
+      );
+    });
+
+    copyNegativeBtn.addEventListener("click", () => {
+      if (!latestBundle) {
+        statusText.textContent = "还没有可复制的负面提示词，先生成内容再试。";
+        return;
+      }
+      copyToClipboard(
+        latestBundle.negativePrompt,
+        "即梦负面提示词已复制。",
+        "复制失败了，请手动选择负面提示词复制。"
+      );
+    });
+
+    copyNarrationBtn.addEventListener("click", () => {
+      if (!latestBundle) {
+        statusText.textContent = "还没有可复制的整条旁白，先生成内容再试。";
+        return;
+      }
+      copyToClipboard(
+        latestBundle.fullNarration,
+        "整条视频旁白已复制。",
+        "复制失败了，请手动选择整条旁白复制。"
+      );
+    });
+
+    fillSample();
+    const initialData = collectFormData();
+    const initialBundle = generateScriptBundle(initialData);
+    renderBundle(initialData, initialBundle);
+  </script>
+</body>
+</html>

@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家政公司朋友圈好评生成器</title>
+  <style>
+    :root {
+      --bg: #f6efe3;
+      --bg-soft: #fffaf3;
+      --card: rgba(255, 249, 240, 0.92);
+      --line: rgba(112, 81, 56, 0.16);
+      --text: #3b2b1f;
+      --muted: #7c6552;
+      --primary: #c86e3b;
+      --primary-deep: #9d4e24;
+      --accent: #56745d;
+      --shadow: 0 24px 60px rgba(88, 57, 37, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 208, 153, 0.42), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(138, 169, 140, 0.30), transparent 26%),
+        linear-gradient(160deg, #f7f0e5 0%, #f3e8da 48%, #efe5d9 100%);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(2px);
+    }
+
+    body::before {
+      width: 260px;
+      height: 260px;
+      top: -90px;
+      right: -40px;
+      background: rgba(255, 188, 135, 0.34);
+    }
+
+    body::after {
+      width: 220px;
+      height: 220px;
+      bottom: 6%;
+      left: -70px;
+      background: rgba(118, 153, 124, 0.22);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero,
+    .panel,
+    .result-card,
+    .tip-bar {
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 30px;
+      border-radius: var(--radius-xl);
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -70px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(200, 110, 59, 0.18), transparent 68%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(200, 110, 59, 0.10);
+      color: var(--primary-deep);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.04;
+      font-weight: 700;
+      font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+    }
+
+    .hero p {
+      margin: 0;
+      line-height: 1.85;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 680px;
+    }
+
+    .hero-note {
+      align-self: stretch;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255, 244, 226, 0.96), rgba(255, 250, 243, 0.92));
+      border: 1px dashed rgba(157, 78, 36, 0.26);
+      transform: rotate(-1.6deg);
+      position: relative;
+    }
+
+    .hero-note::before {
+      content: "";
+      position: absolute;
+      width: 88px;
+      height: 24px;
+      left: 50%;
+      top: -10px;
+      transform: translateX(-50%) rotate(2deg);
+      background: rgba(235, 198, 137, 0.48);
+      border-radius: 10px;
+    }
+
+    .hero-note h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-family: "Songti SC", "STSong", serif;
+    }
+
+    .hero-note ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.9;
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .panel h2,
+    .results-head h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      font-family: "Songti SC", "STSong", serif;
+    }
+
+    .panel p,
+    .results-head p,
+    .tip-bar p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .form-grid {
+      margin-top: 22px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 14px;
+      color: var(--primary-deep);
+      font-weight: 600;
+    }
+
+    .field select,
+    .field input {
+      width: 100%;
+      border: 1px solid rgba(157, 78, 36, 0.16);
+      border-radius: 14px;
+      padding: 14px 14px;
+      font-size: 15px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.76);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .field select:focus,
+    .field input:focus {
+      border-color: rgba(200, 110, 59, 0.56);
+      box-shadow: 0 0 0 4px rgba(200, 110, 59, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      font-family: inherit;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(121, 70, 34, 0.14);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary), #d88d5c);
+      color: #fff8f1;
+    }
+
+    .secondary-btn {
+      background: rgba(86, 116, 93, 0.12);
+      color: var(--accent);
+    }
+
+    .stats {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      padding: 14px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(86, 116, 93, 0.10);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .results {
+      display: grid;
+      gap: 16px;
+    }
+
+    .converter-card {
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      background: rgba(255, 252, 247, 0.92);
+      border: 1px solid rgba(112, 81, 56, 0.16);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 18px;
+    }
+
+    .converter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .converter-head h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-family: "Songti SC", "STSong", serif;
+    }
+
+    .converter-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .converter-layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.92fr) minmax(0, 1.08fr);
+      gap: 18px;
+    }
+
+    .converter-pane {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .upload-actions,
+    .converter-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .upload-box {
+      min-height: 320px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px dashed rgba(157, 78, 36, 0.24);
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .upload-box.has-image {
+      border-style: solid;
+    }
+
+    .upload-placeholder {
+      width: min(84%, 360px);
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.9;
+      font-size: 14px;
+    }
+
+    .feedback-preview {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: linear-gradient(180deg, rgba(248, 248, 250, 0.9), rgba(243, 236, 229, 0.88));
+    }
+
+    .feedback-preview.show {
+      display: block;
+    }
+
+    .upload-note {
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 174px;
+      border: 1px solid rgba(157, 78, 36, 0.16);
+      border-radius: 16px;
+      padding: 14px;
+      resize: vertical;
+      font: inherit;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.82);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: rgba(200, 110, 59, 0.56);
+      box-shadow: 0 0 0 4px rgba(200, 110, 59, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .feedback-result {
+      display: grid;
+      gap: 14px;
+    }
+
+    .results-head {
+      padding: 8px 2px 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+    }
+
+    .result-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .result-card {
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      animation: rise 0.45s ease both;
+    }
+
+    .result-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(200, 110, 59, 0.10);
+      color: var(--primary-deep);
+    }
+
+    .copy-single {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--text);
+      border: 1px solid rgba(112, 81, 56, 0.12);
+    }
+
+    .story {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.95;
+      color: #433124;
+      white-space: pre-wrap;
+    }
+
+    .photo-section {
+      display: grid;
+      gap: 12px;
+    }
+
+    .photo-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .photo-head strong {
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .photo-head span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .photo-card {
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(112, 81, 56, 0.10);
+    }
+
+    .photo-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      background: linear-gradient(135deg, rgba(240, 224, 205, 0.9), rgba(233, 244, 234, 0.9));
+    }
+
+    .photo-meta {
+      padding: 12px 12px 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .photo-meta strong {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .photo-meta span {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .tip-bar {
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tip-bar strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .ghost {
+      opacity: 0.82;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 46px 24px;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      border: 1px dashed rgba(112, 81, 56, 0.20);
+      background: rgba(255, 252, 247, 0.78);
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: rgba(59, 43, 31, 0.92);
+      color: #fffaf2;
+      box-shadow: 0 20px 40px rgba(59, 43, 31, 0.24);
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero,
+      .layout,
+      .converter-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 20px, 100%);
+        margin: 16px auto 24px;
+      }
+
+      .hero,
+      .panel,
+      .result-card,
+      .tip-bar {
+        padding: 18px;
+      }
+
+      .button-row,
+      .stats,
+      .upload-actions,
+      .converter-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .results-head {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">老板娘日常发圈文案</span>
+        <h1>家政公司朋友圈好评生成器</h1>
+        <p>
+          帮你随机生成更像老板娘自己日常发出来的朋友圈文案，把阿姨上门服务里的生活细节、客户回家后的真实感受和对我们的好评，整理成一条更有活人感的内容。
+        </p>
+      </div>
+      <aside class="hero-note">
+        <h2>这页会帮你做到</h2>
+        <ul>
+          <li>每次随机组合不同情境，尽量避免重复</li>
+          <li>加入更多场景、侧重点和表达风格，差异更大</li>
+          <li>默认收成更像老板娘本人在发圈的口吻</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <h2>生成设置</h2>
+        <p>选一个家庭场景、文案侧重点和表达风格，就能一键生成差异更大的老板娘发圈文案。</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="scene">家庭场景</label>
+            <select id="scene">
+              <option value="mixed">随机混合</option>
+              <option value="parenting">带娃家庭</option>
+              <option value="newborn">新手爸妈</option>
+              <option value="busy">双职工家庭</option>
+              <option value="elder">长辈家庭</option>
+              <option value="pet">宠物家庭</option>
+              <option value="movein">新家整理</option>
+              <option value="festival">节前/节后大扫除</option>
+              <option value="rental">退租/出租房</option>
+              <option value="livealone">独居上班族</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="focus">文案侧重点</label>
+            <select id="focus">
+              <option value="mixed">综合夸赞</option>
+              <option value="detail">细心周到</option>
+              <option value="cleaning">清洁到位</option>
+              <option value="storage">收纳利落</option>
+              <option value="cooking">做饭贴心</option>
+              <option value="care">带娃搭把手</option>
+              <option value="punctual">守时沟通</option>
+              <option value="bathroom">厨卫细节</option>
+              <option value="stain">顽渍处理</option>
+              <option value="relief">省心减负</option>
+              <option value="reliable">安排靠谱</option>
+              <option value="safety">安心照护</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="style">表达风格</label>
+            <select id="style">
+              <option value="mixed">随机风格</option>
+              <option value="diary">日常记录</option>
+              <option value="chatty">碎碎念</option>
+              <option value="warm">走心一点</option>
+              <option value="concise">短句口语</option>
+              <option value="night">晚上复盘</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="count">一次生成条数</label>
+            <input id="count" type="number" min="1" max="8" value="4">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="primary-btn" id="generateBtn">随机生成</button>
+          <button class="secondary-btn" id="copyAllBtn">复制全部</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <strong id="countStat">4</strong>
+            <span>当前条数</span>
+          </div>
+          <div class="stat">
+            <strong id="sceneStat">混合</strong>
+            <span>场景类型</span>
+          </div>
+          <div class="stat">
+            <strong id="focusStat">综合</strong>
+            <span>表达重点</span>
+          </div>
+          <div class="stat">
+            <strong id="styleStat">随机</strong>
+            <span>表达风格</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="results">
+        <div class="results-head">
+          <div>
+            <h2>生成结果</h2>
+            <p>下面的文案会在场景、侧重点和表达风格上一起随机变化，并尽量避开刚刚生成过的相似内容。</p>
+          </div>
+          <div class="ghost" id="resultHint">已准备 4 条老板娘日常感文案</div>
+        </div>
+
+        <div class="tip-bar">
+          <div>
+            <strong>使用建议</strong>
+            <p>如果想更像老板娘本人发圈，可以在开头再补一句当天状态，比如“刚回店里”“今天跑完最后一户”或者“晚上做回访时”。</p>
+          </div>
+          <div class="ghost">文案默认避免官话，更像做完服务以后顺手发的一条日常。</div>
+        </div>
+
+        <section class="converter-card">
+          <div class="converter-head">
+            <div>
+              <h3>好评截图转朋友圈</h3>
+              <p>上传客户夸我们的聊天截图，页面会尽量自动识别文字，再生成一条更突出家政公司专业度的朋友圈文案。页面里已经先放好了一个完整示例。</p>
+            </div>
+            <button class="secondary-btn" id="useExampleBtn">载入示例</button>
+          </div>
+
+          <div class="converter-layout">
+            <div class="converter-pane">
+              <div class="upload-actions">
+                <button class="primary-btn" id="uploadImageBtn">上传聊天截图</button>
+                <button class="secondary-btn" id="extractTextBtn">识别截图文字</button>
+              </div>
+              <input id="feedbackImageInput" type="file" accept="image/*" hidden>
+              <div class="upload-box has-image" id="uploadBox">
+                <img id="feedbackPreview" class="feedback-preview show" alt="聊天截图示例或预览">
+                <div class="upload-placeholder" id="uploadPlaceholder" hidden>
+                  把客户聊天截图拖进来，或者点上面的按钮上传。<br>
+                  上传后可以直接在右边修改识别出来的文字。
+                </div>
+              </div>
+              <div class="upload-note" id="ocrStatus">当前已载入页面示例。你也可以上传自己的聊天截图继续生成。</div>
+            </div>
+
+            <div class="converter-pane">
+              <div class="field">
+                <label for="feedbackText">聊天内容</label>
+                <textarea id="feedbackText" placeholder="上传截图后会尽量自动识别文字；如果识别不完整，也可以自己补充和修改。"></textarea>
+              </div>
+              <div class="converter-actions">
+                <button class="primary-btn" id="generateFeedbackBtn">生成朋友圈文案</button>
+                <button class="secondary-btn" id="reloadPageBtn">刷新当前页</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="feedbackResult" class="feedback-result"></div>
+        </section>
+
+        <div id="resultList" class="result-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script>
+    const labels = {
+      scenes: {
+        mixed: "混合",
+        parenting: "带娃",
+        newborn: "新手爸妈",
+        busy: "双职工",
+        elder: "长辈家",
+        pet: "宠物家",
+        movein: "新家整理",
+        festival: "大扫除",
+        rental: "退租/出租",
+        livealone: "独居上班族"
+      },
+      focus: {
+        mixed: "综合",
+        detail: "细心",
+        cleaning: "清洁",
+        storage: "收纳",
+        cooking: "做饭",
+        care: "带娃",
+        punctual: "守时",
+        bathroom: "厨卫",
+        stain: "顽渍",
+        relief: "省心",
+        reliable: "靠谱",
+        safety: "安心"
+      },
+      styles: {
+        mixed: "随机",
+        diary: "记录",
+        chatty: "碎碎念",
+        warm: "走心",
+        concise: "短句",
+        night: "复盘"
+      }
+    };
+
+    const scenePools = {
+      parenting: {
+        serviceLeads: [
+          "今天跑完一户带娃家庭，做完回访以后，我心里一直热乎乎的。",
+          "刚忙完一户宝妈家的活，晚上收到消息，我第一反应就是这一天没白跑。",
+          "带娃家庭的单子做完以后，我通常都会多惦记一下，因为这种家庭最怕的就是家里越忙越乱。"
+        ],
+        intros: [
+          "今天下班一进门，先看到的不是地板有多亮，而是客厅终于有了能落脚的地方。",
+          "晚上回家时，孩子正趴在地垫上翻绘本，整个人比前几天安静了不少。",
+          "这两天一直忙，今天回到家终于有种家里喘过气来的感觉。",
+          "刚把包放下，就发现家里那种乱糟糟的急躁感少了很多。"
+        ],
+        backgrounds: [
+          "家里有个爱把积木和绘本混在一起的小朋友，平时我们自己收一遍，转头又乱了。",
+          "最近孩子有点黏人，白天一边顾工作一边顾家，整个人都很绷着。",
+          "前阵子家里老人来帮忙带娃，东西越放越多，想收拾又总腾不出完整时间。",
+          "娃这阶段特别爱翻抽屉，家里每天像打过一场小仗。"
+        ],
+        details: [
+          "阿姨把孩子常用的小碗、小勺单独放到最顺手的抽屉里，连围兜都叠好了。",
+          "她擦桌面的时候还顺手把宝宝餐椅缝里的饼干屑一点点挑出来，这种地方我们自己都容易漏。",
+          "儿童绘本按薄厚和常看频率分开放，睡前要找的那几本单独立在床边。",
+          "连客厅地垫边上那些容易积灰的位置都清得很仔细，孩子光脚跑来跑去也放心。"
+        ],
+        extras: [
+          "连门口推车旁边那一小块堆东西的位置都顺了一遍。",
+          "她还把常用湿巾和纸巾的位置重新放了一下，抱着孩子也够得着。",
+          "玩具不是一股脑全收起来，而是留了孩子随手能拿的一小盒。 "
+        ]
+      },
+      newborn: {
+        serviceLeads: [
+          "今天是一户新手爸妈家庭，做完以后我特地晚一点回访，因为这种时候一句反馈都特别真。",
+          "刚忙完一户家里有小月龄宝宝的家庭，说实话，这种单子我一直盯得更细。",
+          "新手爸妈家里的活看着不重，其实全是碎的，今天这户回过来的话我看了两遍。"
+        ],
+        intros: [
+          "这段时间一天到晚围着宝宝转，家里最缺的不是帮忙，是终于有人把细碎事接住了。",
+          "最近晚上都睡不整觉，回家看到家里顺下来的那一刻，整个人都松了。",
+          "本来脑子里全是喂奶、拍嗝、洗奶瓶这些事，今天回家终于没再被满屋子的杂乱追着跑。",
+          "这阵子只要家里一乱，情绪就更容易绷着，今天总算缓下来一点。"
+        ],
+        backgrounds: [
+          "宝宝用品多到一个台面都放不下，奶瓶、消毒器、口水巾、纸尿裤每天都在来回挪。",
+          "家里大人最近都没怎么睡好，很多活不是不会做，是根本没有完整时间做。",
+          "有了小宝宝以后，卫生、收纳和拿取顺手这三件事一下都变得重要起来。",
+          "刚有孩子那阵子，最怕的就是家里看着乱，心里更乱。"
+        ],
+        details: [
+          "阿姨把奶瓶清洗区和晾晒区重新顺过，台面一下清爽很多。",
+          "宝宝常用的小纱布、口水巾和围嘴都按顺手程度摆好，夜里拿起来也不慌。",
+          "她连婴儿床边角和床围附近都擦得很仔细，这种地方家里人自己最容易忽略。",
+          "换尿布台旁边零碎的小东西被她收得特别明白，一眼就知道该从哪拿。"
+        ],
+        extras: [
+          "连保温壶和温奶器的位置都顺过，半夜忙起来能少走两步。",
+          "她做事一直轻手轻脚，连这一点都特别加分。",
+          "我自己看生成的回访记录时，第一反应就是这种细致真不是装出来的。"
+        ]
+      },
+      busy: {
+        serviceLeads: [
+          "今天这户是双职工家庭，忙完已经不早了，结果晚上回访时看到消息，我一下就松了口气。",
+          "跑完今天这户上门服务，我本来已经挺累了，但客户一回复，我又觉得很值。",
+          "双职工家庭最知道家里乱起来有多磨人，所以每次收到这种反馈，我都会替阿姨高兴。"
+        ],
+        intros: [
+          "连续加班几天后回到家，第一次觉得门一打开不是负担，而是松了一口气。",
+          "今天回家很晚，本来以为还要再收拾一轮，结果厨房和客厅都已经清清爽爽。",
+          "最近我和爱人都忙，家里很多事一直靠往后拖，今天终于被妥帖接住了。",
+          "下班路上还在想今晚又要折腾多久，结果进门以后直接安静下来。"
+        ],
+        backgrounds: [
+          "双职工家庭最怕的就是家里一点点乱起来，最后谁都没力气处理。",
+          "最近都在赶项目，冰箱、台面、衣帽区基本是见缝插针地用。",
+          "白天根本顾不上家里的细碎活，很多地方看着不脏，真要动手又特别花时间。",
+          "忙起来以后，家务最容易不是做不完，而是越堆越影响心情。"
+        ],
+        details: [
+          "阿姨把第二天早餐能提前准备的东西都分好了，鸡蛋、面包、水果一看就知道怎么拿。",
+          "进门处乱放的快递盒和购物袋都分类归置了，鞋柜前总算不再像临时仓库。",
+          "她连灶台边容易积油的窄缝都处理干净了，整块台面看着特别舒服。",
+          "书桌旁边那些充电线和零碎票据被捋顺以后，家里一下子显得有秩序多了。"
+        ],
+        extras: [
+          "连阳台上的清洁用品都被摆顺了，不再东一瓶西一瓶。",
+          "这种家庭最缺的就是有人把琐碎接住，她这次接得很稳。",
+          "有时候客户夸的不是多干净，而是终于不用下班再打一场仗。"
+        ]
+      },
+      elder: {
+        serviceLeads: [
+          "今天做完一户家里有老人的服务，回访时客户说的几句话，我看完挺有感触。",
+          "有长辈在家的单子，我一直都更上心一点，因为很多细节真不是表面干净就够了。",
+          "这户长辈家庭做完以后，我又专门问了一句住得顺不顺，客户回的话挺打动我。"
+        ],
+        intros: [
+          "这阵子家里主要顾着老人，最怕的不是忙，是怕细节照顾不到。",
+          "今天陪老人吃完饭，看着家里被收拾得安安稳稳，心里挺踏实。",
+          "最近老人住在家里，很多事情都要更细一点，今天特别能感受到专业服务的价值。",
+          "平时总担心家里有水渍、门槛边不好走，今天回来看着舒服也放心。"
+        ],
+        backgrounds: [
+          "老人行动慢一点，家里摆放顺不顺手、地面滑不滑，都会直接影响日常。",
+          "这段时间家里常备药、保温杯、纸巾这些东西总在来回挪，很容易找不到。",
+          "照顾长辈以后才知道，干净不是唯一标准，顺手和安全也特别重要。",
+          "老人家喜欢东西放固定位置，所以每次整理都要更耐心一些。"
+        ],
+        details: [
+          "阿姨把老人常用的水杯和药盒放在伸手就能拿到的位置，还特意把桌面留得很宽松。",
+          "卫生间地面处理得很干爽，防滑垫摆得平平整整，看着就安心很多。",
+          "沙发边的小毯子叠好放在扶手旁，老人午休起来顺手就能拿到。",
+          "她打扫的时候没有一味追求快，而是把过道和床边先整理得更利索。"
+        ],
+        extras: [
+          "这种家庭最怕的是看起来干净，实际用起来别扭，她这次没有。",
+          "回访时客户提到“安心”两个字，我一下就记住了。",
+          "长辈家庭能住得稳稳当当，比什么夸奖都更让我放心。"
+        ]
+      },
+      pet: {
+        serviceLeads: [
+          "今天这户家里有猫也有狗，忙完我身上都是毛，但看到客户回的消息还挺开心。",
+          "宠物家庭的活最考验耐心，因为毛、味道和边边角角真的藏不住。",
+          "刚做完一户宠物家庭，回访的时候客户说家里终于没有那种毛扑扑的感觉了。"
+        ],
+        intros: [
+          "一进门最大的感觉不是亮，是终于没有那种细毛黏在袜子上的感觉。",
+          "家里有猫狗以后最怕的不是乱，是沙发缝、地垫和空气里一直带着毛。",
+          "今天回家以后终于闻不到那种混着猫砂和狗窝的闷味，整个人都舒服了。",
+          "以前每次坐沙发前都得先拍一拍，今天难得可以直接坐下。"
+        ],
+        backgrounds: [
+          "宠物在家的家庭，毛发会钻到很多平时根本注意不到的地方。",
+          "猫砂盆周围和沙发缝一旦顾不上，整个屋子就会有种说不出的乱。",
+          "家里宠物活泼一点，地垫、窝垫和食盆周边总是反复弄脏。",
+          "养宠以后就会知道，真正难的是把家里打理得干净又不影响它们活动。"
+        ],
+        details: [
+          "阿姨把沙发缝、床边和窗帘底下那些藏毛的位置都仔仔细细处理过。",
+          "连宠物食盆周围的水渍和地上的细毛都清得很干净，看着就舒服。",
+          "她把猫砂区和清洁用品区重新顺过，后面打理起来会省事很多。",
+          "宠物常待的那块地垫和窝边都清过一遍，细看才知道做得有多细。"
+        ],
+        extras: [
+          "最难得的是，做得干净但不生硬，宠物回来也不慌。",
+          "宠物家庭最怕有味道，她这次连空气的感觉都顺了。",
+          "这种活不难看见成果，但也最容易偷工，她这次没有。"
+        ]
+      },
+      movein: {
+        serviceLeads: [
+          "今天是一户新家整理，忙完以后整个人都是灰，但看到客户回的消息，心情一下好了。",
+          "新家单子看着体面，其实最碎最耗神，结果今天这户回访时给的反馈还挺暖。",
+          "刚做完一户新家入住家庭，这种住进去以后慢慢顺起来的反馈，我每次看都挺开心。"
+        ],
+        intros: [
+          "新家住进来一阵子，今天第一次有了真正安顿下来的感觉。",
+          "搬家之后一直是箱子没拆完、东西没归位，今天总算看见一点生活的样子。",
+          "原本以为新家整理要靠自己慢慢磨，没想到一次服务就轻松了很多。",
+          "这两周家里像半个仓库，今天回来看着终于不像临时落脚点了。"
+        ],
+        backgrounds: [
+          "新家最难的不是大件，而是那些看着不多、实际特别碎的小东西。",
+          "一搬家，厨房和洗手间的零零碎碎最容易越放越乱。",
+          "本来想自己慢慢整理，但工作一忙，很多箱子一直堆在角落里。",
+          "入住初期最需要的不是表面整齐，而是每样东西都知道该去哪里。"
+        ],
+        details: [
+          "阿姨把厨房按使用频率重新排过，常用锅具、碗盘和调料拿起来都很顺手。",
+          "她把散开的清洁用品、备用纸巾和杂物分区收好，柜子一打开终于不再乱扑出来。",
+          "床品和换季衣物都按类别装好，哪怕现在忙，也不会每次都翻得一团糟。",
+          "玄关和阳台都被重新安排过，进门、换鞋、拿快递都顺多了。"
+        ],
+        extras: [
+          "新家那种灰蒙蒙、没安顿好的感觉，一下就淡了很多。",
+          "我自己也很喜欢这种“从能住变成好住”的变化。",
+          "有时候客户夸一句“终于像个家了”，我比听到“很干净”还开心。"
+        ]
+      },
+      festival: {
+        serviceLeads: [
+          "今天做的是一户节前大扫除，活干完的时候大家都累，但回访消息特别提气。",
+          "节前节后的单子都很真实，因为客户要的不是表面热闹，是家里真的能松快下来。",
+          "这种大扫除的活最见耐心，今天这户回过来的反馈挺实在。"
+        ],
+        intros: [
+          "原本想着节前要收一整天，没想到回家一看，很多最费劲的地方已经被处理好了。",
+          "家里那种要过节却还乱着的压迫感，今天总算没了。",
+          "最明显的不是亮了多少，而是整个屋子看着终于清爽了。",
+          "这次做完以后，家里才有点真正收拾迎接新一轮生活的感觉。"
+        ],
+        backgrounds: [
+          "平时凑合能过，真到节前节后，要洗要擦要整理的地方一下全冒出来了。",
+          "柜顶、窗槽、油烟机边上这些位置，平时基本顾不上，一到大扫除才知道有多难。",
+          "家里人来人往的季节，越想收拾，越觉得从哪儿下手都费劲。",
+          "这种时候最怕不是活多，是活碎，做半天也看不出明显变化。"
+        ],
+        details: [
+          "阿姨把窗槽、柜顶和边角灰都处理得很细，这种地方一干净整个屋子就不一样。",
+          "厨房里积久了的油点和台面缝里的陈旧污渍都一点点清出来了。",
+          "门把手、开关边、踢脚线这些容易忽略的位置也都顺过去了。",
+          "她做完以后不是一味发亮，而是那种看着利索、住着舒服的清爽感。"
+        ],
+        extras: [
+          "这种活最考验耐心，客户能感受到我就知道阿姨没白费劲。",
+          "每年这种时间段，最容易收到特别真心的反馈。",
+          "不是大张旗鼓的惊喜，是整个人回家都舒服了。"
+        ]
+      },
+      rental: {
+        serviceLeads: [
+          "今天做的是一户退租整理，交房前这种活最磨人，客户回消息的时候我都跟着松了口气。",
+          "出租房和退租房的单子最怕做不透，因为很多地方一眼就能看出是不是认真弄过。",
+          "忙完今天这户退租整理，我一直在等回访，结果客户回得特别干脆：值。"
+        ],
+        intros: [
+          "原本还担心这房子交出去会不会显得太旧，今天看完以后心里踏实很多。",
+          "很多原来觉得洗不出来的地方，这次处理完居然真的像样了。",
+          "之前看着就是一股住过很久的疲惫感，今天终于顺眼了。",
+          "这次不是简单整理一下，而是真的把房子的状态往上提了一截。"
+        ],
+        backgrounds: [
+          "退租房最麻烦的是，很多问题不是脏，是旧污、积垢和边角痕迹太多。",
+          "厨房水垢、卫生间胶边、墙角黑印这些东西，自己处理特别费劲。",
+          "平时住着忍一忍就过去了，真到交房的时候，每个小问题都被放大。",
+          "这种房子最难的是做出“干净利索”的感觉，而不是只是看着湿过一遍。"
+        ],
+        details: [
+          "阿姨把水龙头边上的旧水垢和玻璃边的印子一点点处理掉了。",
+          "卫生间角落、地漏边和厨房台面缝这种地方都做得很见功夫。",
+          "她把柜子里外、抽屉轨道和窗边积尘都顺过去了，这种地方最能看出来有没有认真做。",
+          "有些本来以为弄不掉的脏痕，最后都被她处理到了能接受的程度。"
+        ],
+        extras: [
+          "退租单子最怕做成表面功夫，这次没有。",
+          "客户回消息时那种踏实感，我隔着手机都能感觉到。",
+          "这种活做好了，不是惊艳，是省掉后面一大堆麻烦。"
+        ]
+      },
+      livealone: {
+        serviceLeads: [
+          "今天这户是独居上班族，做完以后我其实特别能理解客户说的那句“终于不想逃避回家了”。",
+          "独居客户的单子，经常不是家里特别脏，而是一个人扛久了，连收拾的心气都快没了。",
+          "刚做完一户独居女生的家，回访时那种“终于轻松一点”的语气很真实。"
+        ],
+        intros: [
+          "最近忙到回家只想瘫着，根本不想再面对一屋子衣服和杂物。",
+          "以前一开门就先看到乱，现在总算能先把包放下喘口气。",
+          "说不上哪一块最惊艳，但整个家终于不是那种让我心烦的状态了。",
+          "今天回家第一次觉得，这个房子是真的在照顾我，而不是我在硬撑着维持它。"
+        ],
+        backgrounds: [
+          "一个人住最容易出现的情况就是东西不多，但每样都没空慢慢归位。",
+          "平时下班已经很晚了，洗完澡能把衣服堆到椅子上都算有力气了。",
+          "独居以后最麻烦的不是大扫除，而是那些没人帮忙接住的零碎日常。",
+          "房子不大，但越是小空间，乱一点就会显得整个人都更累。"
+        ],
+        details: [
+          "阿姨把玄关、沙发边和床尾这些最容易堆东西的位置理得特别舒服。",
+          "她顺手把衣架、洗衣液和换下来的家居物件重新排过，后面用起来很顺。",
+          "厨房台面被她清出来以后，终于不再像一个临时堆放区。",
+          "连卫生间镜柜和洗手台旁边那些瓶瓶罐罐都整理得很清楚。"
+        ],
+        extras: [
+          "这种房子不是越收越空，而是越收越让人想住进去。",
+          "独居客户愿意说一句“舒服多了”，分量其实很重。",
+          "我自己也很喜欢这种把日子重新理顺一点的感觉。"
+        ]
+      }
+    };
+
+    const focusPools = {
+      detail: [
+        "最打动我的是，她不是只把表面做干净，而是能看到平时最容易忽略的小地方。",
+        "很多动作都很轻，但能感觉出来是真上心，不是为了赶进度随便做做。",
+        "她做事的时候会先看家里的使用习惯，再决定怎么收，特别自然。",
+        "那种细致不是靠嘴说出来的，是从每一个顺手的小安排里感受到的。"
+      ],
+      cleaning: [
+        "这次清洁做得很透，尤其是那些平时知道要弄、却总拖着没做的地方。",
+        "不是看上去亮一下就结束，而是真的能感觉到卫生被认真处理过。",
+        "很多边角和缝隙都顾到了，回家以后空气和台面的感觉都清爽很多。",
+        "最明显的是整个空间变得干净但不生硬，像被认真照料过。"
+      ],
+      storage: [
+        "收纳这块做得特别舒服，不是把东西藏起来，而是整理完以后更顺手了。",
+        "她归置东西很有逻辑，之后要找什么基本一眼就能看到。",
+        "很多原来总在乱跑的小物件终于有固定位置，家里少了很多无效翻找。",
+        "整理完不是样板间式的整齐，而是真正适合日常生活。"
+      ],
+      cooking: [
+        "连厨房都处理得很贴心，不只是收拾干净，连做饭动线都顺了。",
+        "这次最惊喜的是厨房区域，能看出阿姨很懂居家日常到底需要什么。",
+        "关于吃饭这件事，她考虑得比我们自己还细一点，特别有生活经验。",
+        "厨房从“能用”变成了“舒服好用”，这一点真的挺加分。"
+      ],
+      care: [
+        "家里有孩子时最怕流程一多就更乱，但阿姨做事很稳，反而让家里节奏顺下来。",
+        "她对孩子相关的用品特别有耐心，整理时也会顾及安全和拿取方便。",
+        "带娃家庭最珍惜这种能帮着减轻一点琐碎负担的人，真的会轻松很多。",
+        "她不是生硬地帮忙，而是把和孩子有关的细节处理得很自然。"
+      ],
+      punctual: [
+        "约好的时间和实际上门时间都很准，中间沟通也很顺，不用人一直盯着。",
+        "这次让我轻松的一个点，是安排得很稳，时间上没有反复拉扯。",
+        "有些服务还没进门就先把人磨累了，这次倒没有，沟通起来很省事。",
+        "阿姨上门、开工和过程中反馈都很及时，这种看着普通，其实很加分。"
+      ],
+      bathroom: [
+        "厨房和卫生间这种最难搞的地方，反而做得最见功夫。",
+        "最让我满意的其实是厨卫，很多人只做表面，这次连细角都顾到了。",
+        "水槽、灶台、台盆和淋浴区这类地方最能看出服务水平，这次做得挺服气。",
+        "厨卫一顺，整个家的干净感就出来了，这次特别明显。"
+      ],
+      stain: [
+        "本来以为弄不掉的水垢、油点和旧痕，这次居然处理得很像样。",
+        "一些积了很久的脏印她没有躲着做，而是真的慢慢处理出来了。",
+        "这次最惊喜的其实是顽固污渍，很多地方比我预想得干净。",
+        "旧污这种东西最见耐心，她这次是真的愿意花时间去做。"
+      ],
+      relief: [
+        "让我开心的不是哪一块特别亮，而是整个人一下轻松了。",
+        "忙的时候最怕回家以后还要继续收拾，这次终于有种被接住的感觉。",
+        "说到底，好的服务就是让人回家能先坐下，而不是先进厨房和卫生间打一圈。",
+        "这次最大的感受其实就两个字，省心。"
+      ],
+      reliable: [
+        "整个安排很稳，前面确认、上门过程和后面回访都让人踏实。",
+        "这次不像临时凑合出来的服务，前后衔接都挺顺。",
+        "我会愿意继续约，最主要还是因为这回从安排到上门都靠谱。",
+        "很多体验其实不靠夸张，稳稳当当把事情做好就已经很难得了。"
+      ],
+      safety: [
+        "家里有老人孩子时，最在意的其实是顺手和安全，这次这点做得很好。",
+        "不是简单打扫干净，而是把一些容易磕碰、打滑和乱放的小问题也照顾到了。",
+        "我会觉得安心，不只是因为干净，而是因为很多细节都替我们想到了。",
+        "这种安全感不是嘴上说说，是用了以后才知道有多重要。"
+      ]
+    };
+
+    const praisePools = {
+      mixed: [
+        "这次是真想夸一下你们，阿姨靠谱，沟通也顺，整个过程让人挺省心的。",
+        "原本我还怕又是走流程，结果这次安排得挺稳，做事也实在。",
+        "很少专门夸服务，但这次确实想说一句，你们这回安排的人是真不错。",
+        "最让我满意的不是表面收拾亮了，而是整个家一下子顺了很多。"
+      ],
+      detail: [
+        "很多小地方她都顾到了，这种细不是嘴上说说，是真做出来的。",
+        "能把活做到这么细，我会觉得你们平时对阿姨是真的有要求。",
+        "阿姨能做到这一步，我心里会觉得这家家政是真认真在做事。",
+        "很多我自己都会忽略的位置，她反而替我想到了。"
+      ],
+      cleaning: [
+        "卫生做得挺透的，不是看上去亮一下，是住进去都觉得清爽。",
+        "很多角落都顾到了，这种认真做和随便擦擦真的一眼能看出来。",
+        "愿意给你们好评，主要还是因为这次清洁真没有敷衍。",
+        "打扫完以后那种空气和台面的清爽感，是装不出来的。"
+      ],
+      storage: [
+        "收纳最怕看着整齐，住起来反而更麻烦，但这次整理完是真的顺手。",
+        "能整理得既利索又不折腾人，说明阿姨是懂日常过日子的。",
+        "做完以后不只是好看，关键是后面拿东西顺，这点挺难得。",
+        "很多零碎东西终于有地方放了，后面维护起来也不会那么累。"
+      ],
+      cooking: [
+        "厨房这一块处理得很舒服，不只是干净，是后面做饭也顺手了。",
+        "很多人只会把厨房擦亮，但这次连做饭顺不顺都顾到了。",
+        "愿意夸你们，也是因为这次不是只把卫生做了，是真的把日常也理顺了。",
+        "厨房这种天天要用的地方，最能看出有没有生活经验，这次我服气。"
+      ],
+      care: [
+        "家里有孩子以后，能让人放心真的不容易，所以这次我是真心想夸一句。",
+        "对带娃家庭来说，细心和稳当比什么都重要，这点你们这次做到了。",
+        "孩子相关的东西能照顾得这么顺，我会觉得这单真请对人了。",
+        "阿姨不是机械地帮忙，而是真的知道带娃家庭怕什么、急什么。"
+      ],
+      punctual: [
+        "我这种怕反复沟通的人，对这种准时又顺的安排真的很有好感。",
+        "服务过程里最省心的一点就是时间和沟通都很稳，没有额外消耗人。",
+        "约好的事能准准地做到，对客户来说其实特别重要，这次你们做到了。",
+        "前面确认到后面上门都让人踏实，这种靠谱感很加分。"
+      ],
+      bathroom: [
+        "厨卫做得好不好，一眼就看得出来，这次确实是下了功夫。",
+        "最难搞的两个地方做得反而最好，这种活是骗不了人的。",
+        "我会愿意夸，主要也是因为厨房和卫生间这次做得真像样。",
+        "像水槽边、台盆边、玻璃边这种位置，这次都做得挺服气。"
+      ],
+      stain: [
+        "本来以为这些旧印子根本弄不掉，结果这次居然处理得挺干净。",
+        "顽固污渍这块最能看出是不是认真做，这次我能感觉到她是真的花了时间。",
+        "一些老污垢能做到这个程度，已经比我预期好很多了。",
+        "这种又费时间又不讨巧的活她都没躲着做，这点挺难得。"
+      ],
+      relief: [
+        "最想说的不是多惊艳，就是终于没那么累了。",
+        "客户体验里最重要的其实就是“省心”，这次我是真的有这个感觉。",
+        "家里一顺下来，整个人的状态都不一样，这种轻松感很真实。",
+        "能让我回家以后先坐下而不是先叹气，这就已经很值了。"
+      ],
+      reliable: [
+        "从安排到阿姨上门，整体都挺稳，不是那种做完一单就散的感觉。",
+        "这次体验踏实，前后都有人跟进，这种服务才叫靠谱。",
+        "我愿意再约，主要就是因为这次不是碰运气，是真的安排得不错。",
+        "服务做得稳稳当当，没有一个环节让人心里犯嘀咕，这点挺难得。"
+      ],
+      safety: [
+        "家里有老人孩子，最看重的就是安心，这次这点做得特别到位。",
+        "很多细节一调整，家里就安全顺手很多，这种事只有住的人最知道。",
+        "能把安全感做出来，我会觉得这单的钱花得很值。",
+        "不是只顾着看起来干净，而是真的把容易出问题的小地方也顾上了。"
+      ]
+    };
+
+    const endings = [
+      "不是那种很夸张的惊喜，而是很多小地方都刚好做到心里去。",
+      "现在越来越觉得，好的家政服务就是让人回家以后情绪都能慢慢放下来。",
+      "家里有人认真打理过的感觉，真的会让整天的疲惫少一大半。",
+      "这种安心感不是广告词能说出来的，是回到家那一刻马上能感受到的。",
+      "这次是真的觉得，找对了家政公司，家里会轻松很多。",
+      "很多时候好不好，不是看刚做完那一刻，而是回家以后愿不愿意多待一会儿。"
+    ];
+
+    const styleOpeners = {
+      diary: [
+        "今天这单想认真记一下。",
+        "把今天最有感觉的一户单子记下来。",
+        "今天跑完几户，最想留下来的还是这一条。",
+        "今天的小记录，留给这一户。"
+      ],
+      chatty: [
+        "说真的，今天这条我挺想碎碎念两句。",
+        "有时候做完一单，人很累，但还是会想立刻发个圈。",
+        "这条不想写得太官方，就当我自己唠两句。",
+        "今天这户做完以后，我一路上都在想这件事。"
+      ],
+      warm: [
+        "有些反馈不热闹，但会让人记很久。",
+        "这种带着生活气息的话，我每次看到都会心里一软。",
+        "做这行久了，最容易打动我的还是这种很家常的反馈。",
+        "今天这条不算热闹，但挺暖。"
+      ],
+      concise: [
+        "记一下今天这户。",
+        "今天这单，想简单发一下。",
+        "留个小记录。",
+        "这条发得短一点。"
+      ],
+      night: [
+        "晚上把今天的单子过了一遍，这户我又看了一次回访记录。",
+        "刚回店里坐下，先把这户记下来。",
+        "夜里最适合翻回访记录，今天这一户我想多记一句。",
+        "忙完一整天，最后想发的是这条。"
+      ]
+    };
+
+    const companyClosings = {
+      mixed: [
+        "看完这种反馈，我是真的替阿姨高兴。做我们这行，客户一句“省心了很多”比什么都实在。",
+        "说到底，客户回到家能松口气，我这边就觉得今天这趟值了。",
+        "这种话听着不热闹，但特别真。我也会继续把阿姨和服务都盯紧一点，不辜负这份信任。"
+      ],
+      detail: [
+        "我一直跟阿姨们说，别怕做慢一点，细节做好了，客户一定感觉得到。",
+        "这种小地方能被客户记住，我心里会觉得今天这单做对了。",
+        "越是这种细节上的认可，越提醒我把人和服务都继续盯细一点。"
+      ],
+      cleaning: [
+        "卫生做干净是本分，但能让客户回家就觉得舒服，这才是我更在意的。",
+        "客户能感受到这次不是走流程，对我来说就是最实在的认可。",
+        "这种反馈我每次看都会记一下，也提醒自己别把标准放松了。"
+      ],
+      storage: [
+        "我自己一直觉得，整理不是摆拍，客户后面住着顺手才算真做好。",
+        "能被说一句“现在拿东西方便多了”，比单纯夸整齐更让我高兴。",
+        "收纳做到最后，其实拼的就是生活经验，这种反馈我看着特别开心。"
+      ],
+      cooking: [
+        "厨房这种地方最有烟火气，客户能夸到这儿，我会觉得阿姨是真的把活做到家了。",
+        "做饭顺手了，家里的日子就顺了，这种反馈我一直看得很重。",
+        "我一直觉得好的家政不只是打扫干净，还得把家里的节奏一起理顺。"
+      ],
+      care: [
+        "带娃家庭能轻松一点真的不容易，所以这种反馈我每次看都特别珍惜。",
+        "孩子相关的细节最考验耐心，客户能这样认可，我心里也会替阿姨松一口气。",
+        "越是带娃家庭，我越知道细心和稳当有多重要，这份肯定我会一直记着。"
+      ],
+      punctual: [
+        "守时和沟通这种事，看着普通，其实最见基本功。",
+        "能让客户觉得不费劲，我就知道前面的安排没有白盯。",
+        "很多时候服务好不好，不是进门后才开始，是约时间那一刻就开始了。"
+      ],
+      bathroom: [
+        "厨卫这种地方最见真功夫，做得好不好，客户回家一用就知道。",
+        "这些最费劲的位置能被夸到，我会觉得阿姨今天这趟是真的做透了。",
+        "厨房和卫生间能做出舒服感，其实比把客厅做亮还难。"
+      ],
+      stain: [
+        "顽渍最费时间，也最考验耐心，这种反馈对我来说特别有分量。",
+        "这种不好做又不出彩的活，最能看出阿姨愿不愿意下笨功夫。",
+        "能把旧污一点点磨出来，我比谁都知道背后花了多少时间。"
+      ],
+      relief: [
+        "客户能轻松一点，我这边就觉得今天没白忙。",
+        "说到底，我们做的不是多高级的事，就是帮一个家把气顺回来一点。",
+        "那句“终于不用自己再收一轮了”，对我来说真的很有重量。"
+      ],
+      reliable: [
+        "安排稳不稳，客户感受最直接，所以这种反馈我会特别记着。",
+        "靠谱这个词看着普通，但真能做到前后都稳，其实很难。",
+        "我宁愿慢一点，也想把这种稳当感一直做下去。"
+      ],
+      safety: [
+        "家里有老人孩子的时候，安全感比什么都重要，这种认可我会一直记着。",
+        "能让客户觉得安心，比单纯夸“干净”更让我在意。",
+        "这种细节看着小，住在里面的人每天都能感受到，所以我特别重视。"
+      ]
+    };
+
+    const quoteBridges = [
+      "晚上做回访的时候，客户跟我说，",
+      "刚刚收到客户消息，对方提到，",
+      "这次上门结束后，客户回给我一句，",
+      "回访聊到今天这次服务时，客户说，"
+    ];
+
+    const indirectBridges = [
+      "后面回访时，客户大概就是这个意思，",
+      "客户后来跟我聊起这次服务，说的其实就是，",
+      "她回我的那段话里，最打动我的就是，",
+      "今天回访时客户提到的，基本就是，"
+    ];
+
+    const shortBridges = [
+      "客户回我：",
+      "她后来跟我说：",
+      "回访时说了句：",
+      "收到的反馈是："
+    ];
+
+    const ownerNotes = [
+      "做这行久了以后，我越来越知道，客户真正在意的从来不是一时看着多亮，而是住进去顺不顺。",
+      "很多活看着都是家务，可真做到客户心里去，靠的还是耐心和日常经验。",
+      "有些反馈不长，但你一看就知道，阿姨今天这趟活是做进去了。",
+      "我自己最喜欢的，从来不是特别夸张的表扬，而是这种很生活、很具体的一句。"
+    ];
+
+    const tinyReactions = [
+      "我看完消息坐那儿乐了一下。",
+      "这种话不长，但分量很够。",
+      "看到这里我第一反应就是，这单做值了。",
+      "有时候客户一句话，比一长串夸奖都顶用。"
+    ];
+
+    const sideNotes = [
+      "这种家庭一顺起来，整个家的气氛都会不一样。",
+      "越是这些日常里的小事，越能看出阿姨靠不靠谱。",
+      "看似都是碎事，真做进去以后，客户的感受会很直接。",
+      "说到底，大家需要的都不是花架子，是回家以后那种踏实感。"
+    ];
+
+    const signOffs = [
+      "也谢谢今天上门的阿姨。",
+      "这种信任我会记着。",
+      "继续把活做细。",
+      "再累也觉得值。"
+    ];
+
+    const customerNarrativeBuilders = [
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [intro, background, detail, focusText, extra, praise, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [background, intro, detail, praise, focusText, extra, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [intro, detail, background, focusText, praise, extra, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [detail, extra, intro, background, praise, focusText, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [intro, background, focusText, detail, extra, praise, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [background, detail, intro, extra, focusText, praise].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [intro, extra, detail, background, praise, focusText, ending].filter(Boolean).join(""),
+      ({ intro, background, detail, extra, focusText, praise, ending }) =>
+        [intro, background, detail, extra, praise, focusText].filter(Boolean).join("")
+    ];
+
+    const styleTemplates = {
+      diary: [
+        ({ opener, sceneLead, bridge, customerMoment, close, note, sign }) =>
+          normalizeStory([opener, `${sceneLead}${note}`, `${bridge}“${customerMoment}”`, `${close}${sign}`].join("\n\n")),
+        ({ opener, sceneLead, bridge, customerMoment, close, reaction }) =>
+          normalizeStory([opener, sceneLead, `${bridge}“${customerMoment}”`, `${reaction}${close}`].join("\n"))
+      ],
+      chatty: [
+        ({ opener, sceneLead, bridge, customerMoment, close, note, sign }) =>
+          normalizeStory(`${opener}${sceneLead}${note}${bridge}${customerMoment}${close}${sign}`),
+        ({ opener, sceneLead, indirectBridge, customerMoment, reaction, close }) =>
+          normalizeStory(`${opener}${sceneLead}${indirectBridge}${customerMoment}${reaction}${close}`)
+      ],
+      warm: [
+        ({ opener, leadThought, indirectBridge, customerMoment, close, sign }) =>
+          normalizeStory([`${opener}${leadThought}`, `${indirectBridge}${customerMoment}`, `${close}${sign}`].join("\n\n")),
+        ({ opener, sceneLead, indirectBridge, customerMoment, note, close }) =>
+          normalizeStory([opener, `${sceneLead}${note}`, `${indirectBridge}${customerMoment}`, close].join("\n\n"))
+      ],
+      concise: [
+        ({ opener, sceneLead, shortBridge, customerMoment, close, sign }) =>
+          normalizeStory([opener, sceneLead, `${shortBridge}${customerMoment}`, close, sign].join("\n")),
+        ({ opener, shortBridge, customerMoment, reaction, close }) =>
+          normalizeStory([opener, `${shortBridge}${customerMoment}`, reaction, close].join("\n"))
+      ],
+      night: [
+        ({ opener, sceneLead, bridge, customerMoment, reaction, close }) =>
+          normalizeStory([opener, sceneLead, `${bridge}“${customerMoment}”`, `${reaction}${close}`].join("\n\n")),
+        ({ opener, leadThought, indirectBridge, customerMoment, close, sign }) =>
+          normalizeStory([`${opener}${leadThought}`, `${indirectBridge}${customerMoment}`, `${close}${sign}`].join("\n"))
+      ]
+    };
+
+    const photoPalettes = {
+      warm: {
+        top: "#f6eadc",
+        bottom: "#e7c6a9",
+        wall: "#fffaf3",
+        floor: "#d5b297",
+        accent: "#c97642",
+        accentSoft: "#e6b07a",
+        accentDeep: "#8a5c3f",
+        green: "#88a089",
+        dark: "#5f4737"
+      },
+      sage: {
+        top: "#edf2e6",
+        bottom: "#d4e0d0",
+        wall: "#fcfdf8",
+        floor: "#cabaa7",
+        accent: "#7f9a7d",
+        accentSoft: "#c6d9bb",
+        accentDeep: "#59735d",
+        green: "#95b79a",
+        dark: "#4d574c"
+      },
+      clay: {
+        top: "#f4dfd5",
+        bottom: "#e3b79d",
+        wall: "#fff8f5",
+        floor: "#d2ae99",
+        accent: "#c46d4b",
+        accentSoft: "#ebb38d",
+        accentDeep: "#91533a",
+        green: "#8e9f8a",
+        dark: "#62453a"
+      },
+      blush: {
+        top: "#f7ece6",
+        bottom: "#e8d1cc",
+        wall: "#fff9f7",
+        floor: "#d8bbb1",
+        accent: "#c87e74",
+        accentSoft: "#efc1b3",
+        accentDeep: "#8f5d58",
+        green: "#9bb19a",
+        dark: "#5f4745"
+      },
+      linen: {
+        top: "#f2ede5",
+        bottom: "#ddd0bd",
+        wall: "#fffdf9",
+        floor: "#cdb79d",
+        accent: "#ad8053",
+        accentSoft: "#dfc4a0",
+        accentDeep: "#7e6040",
+        green: "#93a08b",
+        dark: "#58493a"
+      },
+      dusk: {
+        top: "#dfe2eb",
+        bottom: "#c6b6be",
+        wall: "#f8f8fb",
+        floor: "#bca9a6",
+        accent: "#7e6f94",
+        accentSoft: "#b7a8cc",
+        accentDeep: "#5c4f70",
+        green: "#798d8b",
+        dark: "#433c48"
+      }
+    };
+
+    const stylePaletteMap = {
+      diary: "warm",
+      chatty: "clay",
+      warm: "blush",
+      concise: "linen",
+      night: "dusk"
+    };
+
+    const scenePhotoIdeas = {
+      parenting: [
+        { kind: "livingCorner", title: "客厅活动角", caption: "拍整理好的地垫、玩具盒和能落脚的客厅一角。", palette: "warm" },
+        { kind: "toyShelf", title: "玩具和绘本区", caption: "把分盒收好的玩具、绘本排面拍进去，会很有生活感。", palette: "sage" },
+        { kind: "diningChair", title: "宝宝餐椅旁边", caption: "适合拍餐椅、围兜和顺手归位后的餐边区。", palette: "linen" },
+        { kind: "sofaWindow", title: "傍晚客厅氛围", caption: "收拾完后的柔和客厅，很适合做朋友圈第一张。", palette: "blush" }
+      ],
+      newborn: [
+        { kind: "babyStation", title: "奶瓶和护理台面", caption: "拍顺好后的奶瓶区、口水巾和消毒台面。", palette: "blush" },
+        { kind: "cribCorner", title: "婴儿床边角", caption: "婴儿床、床围和旁边的小台面最有代入感。", palette: "sage" },
+        { kind: "drawerDetail", title: "宝宝用品抽屉", caption: "纸尿裤、围嘴、纱布巾分区后的细节特别出片。", palette: "warm" },
+        { kind: "laundryRack", title: "晾晒和收纳角", caption: "拍小衣服、洗护区和顺手的取用位置。", palette: "linen" }
+      ],
+      busy: [
+        { kind: "entryCabinet", title: "玄关归位后", caption: "鞋柜前、快递袋和包包归位后的玄关很适合拍。", palette: "linen" },
+        { kind: "workDesk", title: "书桌和充电线", caption: "拍被理顺的桌面、票据和充电线，最能体现省心。", palette: "dusk" },
+        { kind: "kitchenCounter", title: "厨房台面", caption: "适合拍早餐区、灶台边和顺手很多的厨房台面。", palette: "warm" },
+        { kind: "sofaWindow", title: "下班回家的客厅", caption: "一眼看过去很松快的客厅，特别适合双职工家庭。", palette: "sage" }
+      ],
+      elder: [
+        { kind: "bathroomSink", title: "卫生间防滑区域", caption: "拍干爽地面、防滑垫和顺好的洗手台最合适。", palette: "sage" },
+        { kind: "bedside", title: "床边小桌", caption: "水杯、药盒和小夜灯摆顺后的床边很有说服力。", palette: "linen" },
+        { kind: "hallway", title: "过道和扶手边", caption: "留出宽松走道的画面，能体现安心感。", palette: "warm" },
+        { kind: "sofaWindow", title: "客厅休息位", caption: "沙发边小毯子和茶几留白，最能体现稳当。", palette: "blush" }
+      ],
+      pet: [
+        { kind: "petCorner", title: "宠物活动区", caption: "适合拍窝垫、食盆周边和清爽下来的地面。", palette: "sage" },
+        { kind: "sofaWindow", title: "沙发和地垫", caption: "细毛清掉后的沙发和地垫，对比感很明显。", palette: "linen" },
+        { kind: "entryCabinet", title: "牵引绳收纳位", caption: "门口宠物用品整齐归位，很有日常感。", palette: "warm" },
+        { kind: "bathroomSink", title: "洗护用品区", caption: "宠物洗护和清洁用品摆顺以后也很适合拍。", palette: "clay" }
+      ],
+      movein: [
+        { kind: "storageCabinet", title: "新家柜体分区", caption: "拍打开柜门后的整齐分区，很能体现整理价值。", palette: "linen" },
+        { kind: "kitchenCounter", title: "入住后厨房", caption: "常用锅具和调料归位后的厨房最适合拍。", palette: "warm" },
+        { kind: "windowCorner", title: "阳台或窗边", caption: "窗边、绿植和清爽角落，容易拍出“终于安顿好”的感觉。", palette: "sage" },
+        { kind: "entryCabinet", title: "玄关顺线", caption: "进门、换鞋、拿快递都顺下来的玄关很出片。", palette: "blush" }
+      ],
+      festival: [
+        { kind: "cleanRoom", title: "大面清爽感", caption: "适合拍客厅整体、整屋亮堂感和过节前的利索状态。", palette: "warm" },
+        { kind: "windowCorner", title: "窗边和窗槽", caption: "把窗边、窗槽和阳光感一起拍进去，会很直观。", palette: "linen" },
+        { kind: "kitchenCounter", title: "厨房深度清洁后", caption: "灶台、水槽和台面干净下来以后很适合做主图。", palette: "clay" },
+        { kind: "storageCabinet", title: "柜顶和边角后", caption: "能体现大扫除“做透了”的感觉。", palette: "sage" }
+      ],
+      rental: [
+        { kind: "rentalSink", title: "水槽和玻璃边", caption: "水垢、印子处理后的细节最能体现退租整理价值。", palette: "linen" },
+        { kind: "emptyCabinet", title: "空柜和抽屉", caption: "拍柜体里外、轨道和抽屉边，会很有说服力。", palette: "warm" },
+        { kind: "bathroomSink", title: "卫生间角落", caption: "地漏边、玻璃边和台盆区最值得拍。", palette: "sage" },
+        { kind: "cleanRoom", title: "交房前整屋", caption: "适合拍一张整体清爽、能直接交房的状态。", palette: "clay" }
+      ],
+      livealone: [
+        { kind: "sofaWindow", title: "回家能坐下的角落", caption: "沙发、边几和留白感，很适合独居客户的放松氛围。", palette: "blush" },
+        { kind: "workDesk", title: "桌面和收纳位", caption: "桌面顺了，整个人都没那么累，这类图很贴题。", palette: "dusk" },
+        { kind: "bathroomSink", title: "洗手台和镜柜", caption: "瓶瓶罐罐整理后的洗手台，很有生活感。", palette: "linen" },
+        { kind: "entryCabinet", title: "门口和换鞋位", caption: "进门不再乱成一团的感觉，很适合独居场景。", palette: "warm" }
+      ]
+    };
+
+    const focusPhotoIdeas = {
+      detail: [
+        { kind: "drawerDetail", title: "顺手的小细节", caption: "拍抽屉分区、折好的小件和顺手位置最贴题。", palette: "warm" }
+      ],
+      cleaning: [
+        { kind: "cleanRoom", title: "整屋干净感", caption: "一眼看过去的清爽，会比拍单点更有说服力。", palette: "linen" }
+      ],
+      storage: [
+        { kind: "storageCabinet", title: "打开柜门的整齐感", caption: "收纳类文案很适合搭配柜体内部图。", palette: "sage" }
+      ],
+      cooking: [
+        { kind: "kitchenCounter", title: "做饭顺手的厨房", caption: "拍常用锅具、台面和灶台边，最符合做饭类文案。", palette: "warm" }
+      ],
+      care: [
+        { kind: "toyShelf", title: "孩子用品收得刚刚好", caption: "玩具、绘本和孩子常用品最适合做配图。", palette: "blush" }
+      ],
+      punctual: [
+        { kind: "entryCabinet", title: "进门就顺的状态", caption: "守时沟通类文案适合配“服务一结束就清爽”的画面。", palette: "linen" }
+      ],
+      bathroom: [
+        { kind: "bathroomSink", title: "厨卫最见功夫", caption: "台盆、玻璃和地面这种位置，最容易拍出专业感。", palette: "sage" }
+      ],
+      stain: [
+        { kind: "rentalSink", title: "顽渍处理后的细节", caption: "水垢、旧痕和边角处理后，最适合拍局部。", palette: "clay" }
+      ],
+      relief: [
+        { kind: "sofaWindow", title: "终于能歇一口气的角落", caption: "沙发、窗边和留白感，很适合“省心减负”的文案。", palette: "blush" }
+      ],
+      reliable: [
+        { kind: "cleanRoom", title: "稳稳当当的整屋状态", caption: "安排靠谱类文案，适合配整体干净利索的画面。", palette: "linen" }
+      ],
+      safety: [
+        { kind: "hallway", title: "顺手又安全的走道", caption: "过道、防滑和留白，最适合安心照护类文案。", palette: "sage" }
+      ]
+    };
+
+    const genericPhotoIdeas = [
+      { kind: "cleanRoom", title: "整屋状态图", caption: "不知道拍什么时，先拍一张整体干净感。", palette: "linen" },
+      { kind: "kitchenCounter", title: "厨房台面图", caption: "台面、灶台和水槽很适合做朋友圈第一张。", palette: "warm" },
+      { kind: "sofaWindow", title: "客厅氛围图", caption: "柔和一点的客厅照片，很容易拍出“舒服很多”的感觉。", palette: "blush" }
+    ];
+
+    function svgRect(x, y, width, height, fill, rx = 0, opacity = 1) {
+      return `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${rx}" fill="${fill}" opacity="${opacity}"/>`;
+    }
+
+    function svgCircle(cx, cy, r, fill, opacity = 1) {
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" opacity="${opacity}"/>`;
+    }
+
+    function svgLine(x1, y1, x2, y2, stroke, width, opacity = 1) {
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"/>`;
+    }
+
+    function renderIllustration(kind, palette) {
+      const floor = svgRect(0, 305, 640, 175, palette.floor, 0, 1);
+      const sun = svgCircle(520, 86, 64, palette.accentSoft, 0.32);
+      const plant = `${svgRect(530, 230, 18, 88, palette.accentDeep, 8)}${svgCircle(538, 220, 28, palette.green)}${svgCircle(516, 236, 18, palette.green, 0.9)}${svgCircle(560, 238, 18, palette.green, 0.9)}`;
+
+      switch (kind) {
+        case "livingCorner":
+          return `${floor}${sun}${svgRect(72, 180, 208, 108, palette.accent, 26)}${svgRect(98, 148, 156, 62, palette.accentDeep, 22)}${svgRect(120, 222, 54, 20, palette.wall, 10, 0.9)}${svgRect(192, 222, 54, 20, palette.wall, 10, 0.9)}${svgRect(118, 322, 238, 44, palette.accentSoft, 22, 0.85)}${svgRect(368, 150, 126, 170, palette.wall, 16)}${svgRect(390, 178, 30, 72, palette.accentSoft, 10)}${svgRect(430, 192, 40, 58, palette.green, 10)}${svgRect(390, 260, 78, 18, palette.accent, 8)}${plant}`;
+        case "toyShelf":
+          return `${floor}${sun}${svgRect(82, 136, 174, 174, palette.wall, 18)}${svgRect(100, 158, 138, 12, palette.accentDeep, 6)}${svgRect(100, 214, 138, 12, palette.accentDeep, 6)}${svgRect(102, 170, 44, 34, palette.accentSoft, 10)}${svgRect(152, 170, 34, 34, palette.green, 10)}${svgCircle(210, 188, 18, palette.accent)}${svgRect(102, 228, 60, 42, palette.accent, 12)}${svgRect(170, 228, 62, 42, palette.accentSoft, 12)}${svgRect(318, 308, 220, 56, palette.accentSoft, 28, 0.85)}${svgCircle(388, 332, 22, palette.accent)}${svgRect(428, 316, 34, 18, palette.green, 8)}${svgRect(470, 316, 38, 18, palette.accent, 8)}`;
+        case "diningChair":
+          return `${floor}${sun}${svgRect(140, 180, 252, 22, palette.accentDeep, 12)}${svgRect(162, 196, 18, 112, palette.accentDeep, 8)}${svgRect(350, 196, 18, 112, palette.accentDeep, 8)}${svgRect(104, 212, 72, 86, palette.accentSoft, 18)}${svgRect(106, 172, 68, 60, palette.accent, 18)}${svgRect(408, 142, 96, 152, palette.wall, 20)}${svgRect(428, 178, 56, 36, palette.green, 10)}${svgRect(424, 226, 64, 20, palette.accentSoft, 10)}${plant}`;
+        case "babyStation":
+          return `${floor}${sun}${svgRect(90, 196, 206, 112, palette.wall, 18)}${svgRect(112, 212, 44, 62, palette.accentSoft, 12)}${svgRect(166, 212, 44, 62, palette.green, 12)}${svgRect(220, 212, 44, 62, palette.accent, 12)}${svgRect(332, 138, 202, 170, palette.accentSoft, 22)}${svgRect(356, 168, 154, 16, palette.wall, 8, 0.9)}${svgRect(364, 194, 48, 70, palette.wall, 12)}${svgRect(420, 194, 70, 28, palette.wall, 12)}${svgCircle(456, 248, 18, palette.green)}${plant}`;
+        case "cribCorner":
+          return `${floor}${sun}${svgRect(118, 146, 220, 150, palette.wall, 18)}${svgLine(136, 160, 136, 294, palette.accentDeep, 10)}${svgLine(176, 160, 176, 294, palette.accentDeep, 10)}${svgLine(216, 160, 216, 294, palette.accentDeep, 10)}${svgLine(256, 160, 256, 294, palette.accentDeep, 10)}${svgLine(296, 160, 296, 294, palette.accentDeep, 10)}${svgRect(146, 228, 164, 42, palette.accentSoft, 18)}${svgRect(396, 182, 104, 106, palette.accent, 18)}${svgRect(416, 204, 64, 20, palette.wall, 10)}${plant}`;
+        case "laundryRack":
+          return `${floor}${sun}${svgLine(120, 120, 120, 306, palette.accentDeep, 10)}${svgLine(120, 120, 314, 120, palette.accentDeep, 10)}${svgLine(314, 120, 314, 306, palette.accentDeep, 10)}${svgRect(146, 132, 42, 72, palette.accentSoft, 12)}${svgRect(204, 132, 52, 82, palette.accent, 12)}${svgRect(270, 132, 28, 62, palette.green, 12)}${svgRect(394, 240, 122, 64, palette.wall, 18)}${svgRect(410, 208, 90, 36, palette.accentSoft, 14)}${plant}`;
+        case "entryCabinet":
+          return `${floor}${sun}${svgRect(78, 154, 220, 154, palette.wall, 18)}${svgRect(96, 188, 84, 22, palette.accentSoft, 8)}${svgRect(188, 188, 84, 22, palette.green, 8)}${svgRect(98, 230, 72, 46, palette.accent, 12)}${svgRect(186, 230, 92, 46, palette.accentSoft, 12)}${svgRect(352, 236, 160, 28, palette.accentDeep, 14)}${svgRect(370, 174, 52, 66, palette.accent, 16)}${svgRect(444, 196, 54, 44, palette.green, 16)}${svgCircle(544, 308, 28, palette.accentSoft)}`;
+        case "workDesk":
+          return `${floor}${sun}${svgRect(82, 208, 280, 22, palette.accentDeep, 10)}${svgRect(104, 228, 16, 96, palette.accentDeep, 8)}${svgRect(320, 228, 16, 96, palette.accentDeep, 8)}${svgRect(132, 126, 136, 82, palette.dark, 12)}${svgRect(144, 138, 112, 58, palette.sky || palette.wall, 10)}${svgRect(392, 162, 118, 126, palette.wall, 18)}${svgRect(412, 186, 78, 18, palette.accentSoft, 8)}${svgRect(412, 214, 84, 18, palette.green, 8)}${svgRect(432, 326, 80, 18, palette.accentSoft, 8)}`;
+        case "kitchenCounter":
+          return `${floor}${sun}${svgRect(0, 150, 640, 42, palette.accentSoft, 0)}${svgRect(72, 196, 370, 120, palette.wall, 18)}${svgRect(72, 196, 370, 26, palette.accentDeep, 12)}${svgCircle(152, 262, 28, palette.accent)}${svgRect(204, 234, 94, 42, palette.green, 16)}${svgRect(324, 222, 74, 58, palette.accentSoft, 12)}${svgRect(478, 166, 92, 144, palette.wall, 18)}${svgRect(500, 194, 48, 18, palette.accent, 8)}${plant}`;
+        case "bathroomSink":
+          return `${floor}${sun}${svgRect(0, 118, 640, 144, palette.sky || "#dfe7ee", 0)}${svgRect(94, 148, 188, 116, palette.wall, 18)}${svgRect(118, 178, 140, 34, palette.sky || palette.accentSoft, 14)}${svgRect(122, 236, 132, 14, palette.accentDeep, 7)}${svgRect(342, 156, 170, 152, palette.wall, 18)}${svgRect(366, 184, 122, 28, palette.accentSoft, 12)}${svgRect(392, 228, 70, 18, palette.green, 8)}${svgCircle(520, 332, 28, palette.accentSoft)}`;
+        case "bedside":
+          return `${floor}${sun}${svgRect(64, 184, 310, 110, palette.accentSoft, 26)}${svgRect(82, 164, 160, 42, palette.wall, 18)}${svgRect(86, 228, 82, 18, palette.wall, 8)}${svgRect(404, 194, 78, 98, palette.wall, 16)}${svgRect(422, 176, 42, 24, palette.accent, 10)}${svgRect(420, 220, 46, 18, palette.green, 8)}${plant}`;
+        case "hallway":
+          return `${floor}${sun}${svgRect(96, 130, 86, 188, palette.wall, 12)}${svgRect(462, 130, 86, 188, palette.wall, 12)}${svgRect(182, 130, 280, 188, palette.wall, 22)}${svgRect(232, 196, 176, 70, palette.accentSoft, 24, 0.5)}${svgLine(214, 164, 214, 296, palette.accentDeep, 8)}${svgLine(430, 164, 430, 296, palette.accentDeep, 8)}${svgRect(278, 328, 88, 16, palette.green, 8)}`;
+        case "petCorner":
+          return `${floor}${sun}${svgRect(96, 292, 166, 42, palette.accentSoft, 22)}${svgCircle(164, 282, 34, palette.green)}${svgRect(362, 250, 118, 74, palette.wall, 22)}${svgRect(392, 214, 26, 34, palette.accent, 10)}${svgRect(426, 214, 26, 34, palette.accentSoft, 10)}${svgRect(118, 218, 78, 46, palette.accent, 18)}${svgCircle(520, 318, 26, palette.accentSoft)}${plant}`;
+        case "sofaWindow":
+          return `${floor}${sun}${svgRect(88, 108, 154, 180, palette.sky || palette.wall, 18)}${svgLine(164, 108, 164, 288, palette.wall, 4)}${svgRect(280, 190, 240, 102, palette.accent, 26)}${svgRect(308, 160, 184, 54, palette.accentDeep, 20)}${svgRect(330, 230, 56, 20, palette.wall, 10, 0.9)}${svgRect(412, 230, 56, 20, palette.wall, 10, 0.9)}${svgRect(298, 320, 220, 40, palette.accentSoft, 20, 0.84)}`;
+        case "storageCabinet":
+          return `${floor}${sun}${svgRect(86, 132, 210, 190, palette.wall, 18)}${svgRect(104, 160, 174, 60, palette.accentSoft, 12)}${svgRect(104, 232, 174, 60, palette.green, 12)}${svgRect(344, 152, 200, 156, palette.wall, 18)}${svgRect(368, 174, 64, 30, palette.accent, 10)}${svgRect(444, 174, 64, 30, palette.accentSoft, 10)}${svgRect(368, 220, 140, 46, palette.accentDeep, 12, 0.18)}${plant}`;
+        case "windowCorner":
+          return `${floor}${sun}${svgRect(70, 90, 196, 198, palette.wall, 18)}${svgRect(90, 110, 156, 158, palette.sky || palette.wall, 12)}${svgLine(168, 110, 168, 268, palette.wall, 4)}${svgRect(322, 220, 130, 76, palette.accentSoft, 18)}${svgRect(344, 188, 86, 34, palette.green, 12)}${plant}${svgRect(486, 328, 70, 16, palette.accentSoft, 8)}`;
+        case "cleanRoom":
+          return `${floor}${sun}${svgRect(72, 164, 500, 138, palette.wall, 24)}${svgRect(104, 194, 120, 82, palette.accentSoft, 20)}${svgRect(258, 184, 140, 92, palette.green, 20)}${svgRect(428, 206, 110, 70, palette.accent, 20)}${svgRect(146, 320, 336, 34, palette.accentSoft, 18, 0.84)}`;
+        case "rentalSink":
+          return `${floor}${sun}${svgRect(84, 160, 222, 138, palette.wall, 18)}${svgRect(108, 186, 78, 46, palette.sky || palette.accentSoft, 12)}${svgRect(196, 186, 82, 46, palette.accentSoft, 12)}${svgRect(344, 136, 208, 170, palette.wall, 18)}${svgRect(374, 174, 150, 84, palette.sky || palette.wall, 18)}${svgRect(396, 266, 108, 16, palette.accentDeep, 8)}`;
+        case "emptyCabinet":
+          return `${floor}${sun}${svgRect(118, 112, 172, 208, palette.wall, 18)}${svgRect(136, 136, 136, 60, palette.accentDeep, 8, 0.12)}${svgRect(136, 212, 136, 60, palette.accentDeep, 8, 0.12)}${svgRect(350, 162, 188, 144, palette.wall, 18)}${svgRect(376, 190, 136, 20, palette.accentSoft, 8)}${svgRect(376, 226, 136, 20, palette.green, 8)}${svgRect(376, 262, 96, 20, palette.accent, 8)}`;
+        case "drawerDetail":
+          return `${floor}${sun}${svgRect(86, 180, 244, 120, palette.wall, 18)}${svgRect(108, 204, 88, 72, palette.accentSoft, 12)}${svgRect(206, 204, 44, 72, palette.green, 12)}${svgRect(260, 204, 44, 34, palette.accent, 10)}${svgRect(260, 246, 44, 30, palette.accentDeep, 10, 0.16)}${svgRect(382, 158, 120, 144, palette.accentSoft, 16)}${svgRect(404, 188, 76, 16, palette.wall, 8)}${svgRect(404, 214, 54, 54, palette.wall, 12)}`;
+        default:
+          return `${floor}${sun}${svgRect(110, 170, 420, 130, palette.wall, 22)}${svgRect(150, 204, 120, 62, palette.accentSoft, 18)}${svgRect(292, 194, 104, 72, palette.green, 18)}${svgRect(420, 214, 76, 52, palette.accent, 18)}`;
+      }
+    }
+
+    function buildPhotoDataUrl(kind, paletteKey) {
+      const palette = photoPalettes[paletteKey] || photoPalettes.warm;
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${palette.top}"/>
+              <stop offset="100%" stop-color="${palette.bottom}"/>
+            </linearGradient>
+          </defs>
+          <rect width="640" height="480" rx="36" fill="url(#bg)"/>
+          ${svgCircle(112, 86, 56, palette.wall, 0.45)}
+          ${svgCircle(560, 72, 44, palette.accentSoft, 0.22)}
+          ${renderIllustration(kind, palette)}
+        </svg>
+      `;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function shuffledCopy(list) {
+      const copy = [...list];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function selectPhotoIdeas(sceneKey, focusKey, styleKey) {
+      const picked = [];
+      const seen = new Set();
+      const stylePalette = stylePaletteMap[styleKey] || "warm";
+      const pools = [
+        shuffledCopy(focusPhotoIdeas[focusKey] || []),
+        shuffledCopy(scenePhotoIdeas[sceneKey] || []),
+        shuffledCopy(genericPhotoIdeas)
+      ];
+
+      for (const pool of pools) {
+        for (const idea of pool) {
+          if (picked.length >= 3) {
+            break;
+          }
+          const signature = `${idea.kind}-${idea.title}`;
+          if (seen.has(signature)) {
+            continue;
+          }
+          seen.add(signature);
+          picked.push({
+            ...idea,
+            palette: idea.palette || stylePalette
+          });
+        }
+      }
+
+      return picked.map((idea) => ({
+        ...idea,
+        src: buildPhotoDataUrl(idea.kind, idea.palette || stylePalette)
+      }));
+    }
+
+    const sampleFeedbackMessages = [
+      { from: "shop", text: "宝妈您好，今天阿姨已经服务结束啦，我这边简单做个回访。" },
+      { from: "client", text: "今天回家真的舒服很多，厨房和卫生间都收得很细，宝宝餐椅旁边的饼干屑都清掉了。" },
+      { from: "client", text: "而且阿姨很稳，时间准，东西收完以后我后面拿也很顺手。" },
+      { from: "client", text: "这次安排得很靠谱，是真的省心。" }
+    ];
+
+    const sampleFeedbackText = sampleFeedbackMessages
+      .filter((item) => item.from === "client")
+      .map((item) => item.text)
+      .join("\n");
+
+    const sceneKeywordMap = {
+      parenting: ["带娃", "孩子", "宝宝", "宝妈", "绘本", "玩具", "餐椅"],
+      newborn: ["新生儿", "月子", "奶瓶", "纸尿裤", "喂奶", "小月龄", "婴儿床"],
+      busy: ["加班", "上班", "下班", "双职工", "忙", "项目", "早餐"],
+      elder: ["老人", "长辈", "爷爷", "奶奶", "药盒", "防滑", "过道"],
+      pet: ["宠物", "猫", "狗", "猫砂", "狗毛", "细毛", "窝垫"],
+      movein: ["新家", "搬家", "入住", "箱子", "安顿", "玄关"],
+      festival: ["大扫除", "节前", "过节", "节后", "柜顶", "窗槽"],
+      rental: ["退租", "交房", "出租", "旧污", "水垢", "印子"],
+      livealone: ["独居", "一个人住", "上班族", "回家", "玄关", "衣服堆"]
+    };
+
+    const focusKeywordMap = {
+      detail: ["细", "细心", "小地方", "顺手", "注意到", "顾到"],
+      cleaning: ["干净", "清洁", "清爽", "卫生", "灰", "擦"],
+      storage: ["收纳", "归置", "整理", "分区", "顺手", "归位"],
+      cooking: ["做饭", "厨房", "灶台", "锅具", "调料", "早餐"],
+      care: ["孩子", "宝宝", "带娃", "玩具", "绘本", "餐椅"],
+      punctual: ["时间准", "守时", "准时", "上门准", "沟通顺", "及时"],
+      bathroom: ["卫生间", "厨房", "厨卫", "台盆", "水槽", "淋浴", "玻璃边"],
+      stain: ["水垢", "油点", "污渍", "旧痕", "印子", "脏痕", "胶边"],
+      relief: ["省心", "轻松", "终于", "松了口气", "舒服很多", "不用自己"],
+      reliable: ["靠谱", "安排得稳", "踏实", "放心", "值", "稳"],
+      safety: ["安心", "安全", "防滑", "顺手", "照护", "放心"]
+    };
+
+    const feedbackOpeners = {
+      diary: [
+        "今天回访里有段话，我想单独记一下。",
+        "把这位客户的反馈记在今天这里。",
+        "今天这条不是模板，是真想留下来的一句回访。 "
+      ],
+      chatty: [
+        "这条我不想写得太官方，就想按我自己的口气记一下。",
+        "说真的，看到这段反馈的时候，我人都松了一下。",
+        "有些客户回过来的话很实在，实在到你会想立刻发个圈。 "
+      ],
+      warm: [
+        "今晚看到这段回访，我心里一直暖着。",
+        "有些反馈不长，但会让我记很久，今天这条就是。",
+        "这种很生活、很具体的认可，对我来说特别有分量。 "
+      ],
+      concise: [
+        "记一下今晚这条回访。",
+        "这条反馈，想单独留一下。",
+        "今天这户，值得发一条。 "
+      ],
+      night: [
+        "晚上整理回访消息的时候，这几句话我来回看了两遍。",
+        "忙完一天坐下来，最想留下来的就是这条客户反馈。",
+        "夜里翻今天的回访记录，这一户我还是想记下来。 "
+      ]
+    };
+
+    const sceneProfessionalNotes = {
+      parenting: [
+        "带娃家庭最看重的，从来不只是表面干净，而是孩子活动区、常用品和节奏能不能一起顺下来。",
+        "带娃客户会夸到这些位置，说明阿姨今天不是只在做家务，而是真的把家庭节奏接住了。 "
+      ],
+      newborn: [
+        "新手爸妈家里最怕的是又乱又赶，我们平时会特别盯宝宝用品区、奶瓶区和夜里最常用的动线。",
+        "小月龄家庭的服务最考验细和稳，能被这样认可，我就知道阿姨今天做得很到位。 "
+      ],
+      busy: [
+        "双职工家庭最难的就是下班回去还要再打一轮家务仗，所以我们一直很看重“回家就能松口气”这件事。",
+        "这种家庭真正满意的点，往往不是单一位置多亮，而是整个人回家以后终于不用再忙第二场。 "
+      ],
+      elder: [
+        "有长辈在家的服务，重点从来不只是干净，还包括顺手、安全和日常照护的稳定感。",
+        "客户愿意提到安心和踏实，对我们来说比一句单纯的“不错”更有分量。 "
+      ],
+      pet: [
+        "宠物家庭最考验耐心，因为毛发、味道和活动区这些东西，做不细一下就能看出来。",
+        "能让养宠家庭觉得舒服，说明阿姨不是只做表面，而是真把细毛、味道和用品区都顾到了。 "
+      ],
+      movein: [
+        "新家整理最难的是把碎东西、使用频率和后面住进去的顺手度一起理清楚。",
+        "客户说住起来顺了，对我们来说就是最好的结果，因为新家服务本来就不该只停在“看起来整齐”。 "
+      ],
+      festival: [
+        "节前节后的深度清洁最能看出阿姨愿不愿意下功夫，很多边角位置偷不得懒。",
+        "这种大扫除单子能被夸，说明那些最费劲的位置是真做进去了。 "
+      ],
+      rental: [
+        "退租和出租房的服务，最见专业度，因为很多旧污和边角痕迹，一眼就能看出有没有认真处理。",
+        "客户能在这种单子里感受到踏实，其实说明阿姨今天花了很多笨功夫。 "
+      ],
+      livealone: [
+        "独居客户最需要的，往往不是一瞬间惊艳，而是回家终于不再被杂乱消耗。",
+        "这种家庭的服务看着普通，其实最考验我们能不能把琐碎日常真正接住。 "
+      ]
+    };
+
+    const focusProfessionalNotes = {
+      mixed: [
+        "我们一直要求阿姨上门不只是把活做完，而是把客户每天真会用到、真会烦到的位置做进去。",
+        "客户愿意把这些细节说出来，说明这次服务不只是过得去，而是真的做到了心里。 "
+      ],
+      detail: [
+        "细节这件事最藏不住，真做到了，客户自己就会说出来。",
+        "我们平时盯得最多的就是这些小地方，因为真正的专业感很多时候就藏在这里。 "
+      ],
+      cleaning: [
+        "清洁做得透不透，客户回家第一秒就能感受到，所以这块我们一直不敢放松。",
+        "很多人觉得清洁就是擦一遍，但客户会专门提到舒服和清爽，说明做的是深度不是表面。 "
+      ],
+      storage: [
+        "收纳不是把东西藏起来，而是让客户后面拿取更省事，这也是我们一直在训练阿姨的点。",
+        "能被客户夸到“后面拿着顺”，这种比单纯说整齐更说明专业。 "
+      ],
+      cooking: [
+        "厨房要做得让人服气，靠的是生活经验和动线意识，不是单纯擦亮。",
+        "客户会提到做饭顺手，说明这次服务已经不只是卫生层面了。 "
+      ],
+      care: [
+        "带娃相关的服务最考验阿姨的耐心和分寸，这块我们平时培训盯得特别细。",
+        "客户能在孩子相关的位置上感受到轻松，对我们来说是非常高的认可。 "
+      ],
+      punctual: [
+        "守时和沟通看着普通，其实最能体现一家公司底子稳不稳。",
+        "客户不被流程消耗，本身就是专业度的一部分，所以这点我们一直抓得很紧。 "
+      ],
+      bathroom: [
+        "厨卫这种位置最见真功夫，很多细节没做透，客户回家一眼就知道。",
+        "能被夸到厨卫，说明这次服务是往深里做了，不是浮在表面。 "
+      ],
+      stain: [
+        "顽固污渍最费时间，也最考验愿不愿意下笨功夫，这类位置我们向来要求阿姨不要躲着做。",
+        "客户会专门提到这些旧污，说明今天的服务是做出了肉眼可见的专业度。 "
+      ],
+      relief: [
+        "所谓专业，很多时候不是多高级，而是能让客户真的轻松下来。",
+        "我们一直觉得，客户回家先坐下而不是先叹气，这就是服务最实在的价值。 "
+      ],
+      reliable: [
+        "安排稳、过程顺、回访跟得上，这些放在一起才叫真正靠谱。",
+        "客户愿意用“靠谱”这个词，对我来说分量一直都很重。 "
+      ],
+      safety: [
+        "安心感这种东西做不出花架子，只能靠细节一点点积起来。",
+        "客户能觉得放心，说明这次服务不仅做干净了，也把安全和顺手都照顾到了。 "
+      ]
+    };
+
+    const feedbackClosings = {
+      mixed: [
+        "客户回到家能舒服很多，我就知道今天这趟活做值了。",
+        "这种认可不热闹，但特别真，也会让我继续把服务盯得更细。 "
+      ],
+      detail: [
+        "小地方能被客户记住，我心里会觉得今天这单做对了。",
+        "细节这件事没人能装太久，做出来了，客户自然会看见。 "
+      ],
+      cleaning: [
+        "回家就觉得清爽，这种感受装不出来，所以我每次看到都很珍惜。",
+        "卫生做到让客户愿意主动夸，我知道这不是随便擦一遍能有的结果。 "
+      ],
+      storage: [
+        "能被说一句“后面拿着顺”，比单纯夸整齐更让我开心。",
+        "住进去方便很多，才是整理真正的意义。 "
+      ],
+      cooking: [
+        "厨房能顺下来，家里的烟火气才会顺，这类反馈我一直看得很重。",
+        "日子过得顺不顺，厨房最知道，所以被夸到这块我会特别高兴。 "
+      ],
+      care: [
+        "带娃家庭能轻松一点真的不容易，所以这种反馈我会一直记着。",
+        "孩子相关的位置能被客户夸到，说明阿姨今天是真的把心思放进去了。 "
+      ],
+      punctual: [
+        "客户不被来回沟通消耗，这种体验其实也是专业的一部分。",
+        "守时和稳当这两个词看着普通，但真能做到，客户感受最直接。 "
+      ],
+      bathroom: [
+        "厨卫这种地方做得服气，我自己都会替阿姨高兴。",
+        "越是难做的位置能被夸，越说明今天这趟服务做透了。 "
+      ],
+      stain: [
+        "这种又累又不讨巧的地方能被客户看到，我知道阿姨今天是真下了功夫。",
+        "旧污能处理到这个程度，对我来说就是实打实的专业。 "
+      ],
+      relief: [
+        "客户说轻松一点，我这边就觉得再累也值。",
+        "帮一个家把那口气顺回来一点，这就是我们一直在做的事。 "
+      ],
+      reliable: [
+        "靠谱这两个字，我一直觉得比一长串夸奖都实在。",
+        "前后都稳稳当当，这种信任我会记住。 "
+      ],
+      safety: [
+        "安心这件事，住在里面的人最知道分量，所以这种反馈我会特别珍惜。",
+        "安全感能被客户感受到，我就知道今天这单的专业度立住了。 "
+      ]
+    };
+
+    function escapeSvgText(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function wrapTextByLength(text, maxChars = 13) {
+      const chars = [...text];
+      const lines = [];
+      let current = "";
+      chars.forEach((char, index) => {
+        current += char;
+        const hitBreak = current.length >= maxChars;
+        const punctuationBreak = /[，。！？；]/.test(char) && current.length >= Math.max(8, maxChars - 2);
+        if (hitBreak || punctuationBreak || index === chars.length - 1) {
+          lines.push(current);
+          current = "";
+        }
+      });
+      return lines.filter(Boolean);
+    }
+
+    function createChatScreenshotDataUrl(messages) {
+      let y = 90;
+      let body = `
+        <rect x="0" y="0" width="720" height="980" rx="36" fill="#efefef"/>
+        <rect x="0" y="0" width="720" height="110" rx="36" fill="#f7f7f7"/>
+        <text x="360" y="70" text-anchor="middle" font-size="30" font-weight="700" fill="#2b2b2b">客户回访截图示例</text>
+      `;
+
+      messages.forEach((item) => {
+        const isClient = item.from === "client";
+        const lines = wrapTextByLength(item.text, isClient ? 13 : 15);
+        const bubbleWidth = Math.min(440, Math.max(210, Math.max(...lines.map((line) => line.length)) * 26 + 52));
+        const bubbleHeight = 34 + lines.length * 34;
+        const bubbleX = isClient ? 720 - bubbleWidth - 86 : 96;
+        const bubbleFill = isClient ? "#b7eb7a" : "#ffffff";
+        const avatarX = isClient ? 720 - 54 : 54;
+        const textX = bubbleX + 24;
+        const bubbleY = y;
+        const avatarFill = isClient ? "#c86e3b" : "#8ca08f";
+        const label = isClient ? "客" : "店";
+
+        body += `
+          <circle cx="${avatarX}" cy="${bubbleY + 20}" r="24" fill="${avatarFill}"/>
+          <text x="${avatarX}" y="${bubbleY + 30}" text-anchor="middle" font-size="22" font-weight="700" fill="#ffffff">${label}</text>
+          <rect x="${bubbleX}" y="${bubbleY}" width="${bubbleWidth}" height="${bubbleHeight}" rx="24" fill="${bubbleFill}"/>
+        `;
+
+        lines.forEach((line, index) => {
+          body += `<text x="${textX}" y="${bubbleY + 36 + index * 32}" font-size="25" fill="#303030">${escapeSvgText(line)}</text>`;
+        });
+
+        y += bubbleHeight + 32;
+      });
+
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 980">${body}</svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function detectBestKey(text, keywordMap, fallbackKey) {
+      let bestKey = fallbackKey;
+      let bestScore = -1;
+      Object.entries(keywordMap).forEach(([key, keywords]) => {
+        const score = keywords.reduce((total, keyword) => total + (text.includes(keyword) ? keyword.length + 1 : 0), 0);
+        if (score > bestScore) {
+          bestScore = score;
+          bestKey = key;
+        }
+      });
+      return bestScore > 0 ? bestKey : fallbackKey;
+    }
+
+    function extractUsefulFragments(text) {
+      const positiveKeywords = ["舒服", "省心", "靠谱", "顺手", "细", "安心", "放心", "认真", "清爽", "轻松", "满意", "稳", "干净", "值"];
+      const cleaned = text
+        .replace(/\d{1,2}[:：]\d{2}/g, " ")
+        .replace(/(客户|宝妈|业主|阿姨|店长|老板娘|我|妈妈|爸爸)[：:]/g, " ")
+        .replace(/[【】[\]]/g, " ")
+        .replace(/\s+/g, "\n");
+
+      const seen = new Set();
+      return cleaned
+        .split(/[\n\r。！？!?]+/)
+        .map((item) => item.trim())
+        .filter((item) => item.length >= 7 && item.length <= 48)
+        .map((item) => ({
+          text: item,
+          score: positiveKeywords.reduce((sum, keyword) => sum + (item.includes(keyword) ? 3 : 0), 0) + Math.min(item.length / 8, 4)
+        }))
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.text)
+        .filter((item) => {
+          if (seen.has(item)) {
+            return false;
+          }
+          seen.add(item);
+          return true;
+        })
+        .slice(0, 3);
+    }
+
+    function createFeedbackPost(rawText, preferredStyle = "mixed") {
+      const sourceText = (rawText || "").trim() || sampleFeedbackText;
+      const compactText = normalizeParagraph(sourceText);
+      const styleKey = preferredStyle !== "mixed" ? preferredStyle : (styleSelect.value !== "mixed" ? styleSelect.value : randomItem(["warm", "night", "diary"]));
+      const sceneFallback = sceneSelect.value !== "mixed" ? sceneSelect.value : "busy";
+      const focusFallback = focusSelect.value !== "mixed" ? focusSelect.value : "reliable";
+      const sceneKey = detectBestKey(compactText, sceneKeywordMap, sceneFallback);
+      const focusKey = detectBestKey(compactText, focusKeywordMap, focusFallback);
+      const fragments = extractUsefulFragments(sourceText);
+      const quoteText = (fragments.length ? fragments : [buildCustomerMoment(scenePools[sceneKey], focusKey, focusKey).slice(0, 42)])
+        .slice(0, 2)
+        .map((item) => `“${item}”`)
+        .join("");
+      const opener = randomItem(feedbackOpeners[styleKey]);
+      const sceneNote = randomItem(sceneProfessionalNotes[sceneKey] || sceneProfessionalNotes.busy);
+      const focusNote = randomItem([...(focusProfessionalNotes[focusKey] || []), ...focusProfessionalNotes.mixed]);
+      const close = randomItem([...(feedbackClosings[focusKey] || []), ...feedbackClosings.mixed]);
+      const reaction = maybeItem(tinyReactions, 0.78);
+      const side = maybeItem(sideNotes, 0.68);
+
+      let text = "";
+
+      if (styleKey === "concise") {
+        text = normalizeStory([
+          opener,
+          `客户回我的这几句，我直接记下来了：${quoteText}`,
+          `${sceneNote}${focusNote}`,
+          `${close}${maybeItem(signOffs, 0.58)}`
+        ].join("\n"));
+      } else if (styleKey === "chatty") {
+        text = normalizeStory(`${opener}客户今天回给我的话是：${quoteText}${reaction}${sceneNote}${focusNote}${side}${close}`);
+      } else if (styleKey === "night") {
+        text = normalizeStory([
+          opener,
+          `今晚回访时，客户给我的反馈里，最有分量的就是这几句：${quoteText}`,
+          `${sceneNote}${focusNote}`,
+          `${reaction}${close}`
+        ].join("\n\n"));
+      } else if (styleKey === "diary") {
+        text = normalizeStory([
+          opener,
+          `今天这户客户回给我的话，我想原样记一下：${quoteText}`,
+          `${sceneNote}${focusNote}${side}`,
+          close
+        ].join("\n\n"));
+      } else {
+        text = normalizeStory([
+          opener,
+          `客户回过来的几句话很实在：${quoteText}`,
+          `${sceneNote}${focusNote}`,
+          `${reaction}${close}`
+        ].join("\n\n"));
+      }
+
+      return {
+        text,
+        sceneKey,
+        focusKey,
+        styleKey,
+        photoIdeas: selectPhotoIdeas(sceneKey, focusKey, styleKey)
+      };
+    }
+
+    const sceneSelect = document.getElementById("scene");
+    const focusSelect = document.getElementById("focus");
+    const styleSelect = document.getElementById("style");
+    const countInput = document.getElementById("count");
+    const generateBtn = document.getElementById("generateBtn");
+    const copyAllBtn = document.getElementById("copyAllBtn");
+    const uploadImageBtn = document.getElementById("uploadImageBtn");
+    const extractTextBtn = document.getElementById("extractTextBtn");
+    const useExampleBtn = document.getElementById("useExampleBtn");
+    const reloadPageBtn = document.getElementById("reloadPageBtn");
+    const generateFeedbackBtn = document.getElementById("generateFeedbackBtn");
+    const feedbackImageInput = document.getElementById("feedbackImageInput");
+    const feedbackPreview = document.getElementById("feedbackPreview");
+    const uploadBox = document.getElementById("uploadBox");
+    const uploadPlaceholder = document.getElementById("uploadPlaceholder");
+    const ocrStatus = document.getElementById("ocrStatus");
+    const feedbackText = document.getElementById("feedbackText");
+    const feedbackResult = document.getElementById("feedbackResult");
+    const resultList = document.getElementById("resultList");
+    const countStat = document.getElementById("countStat");
+    const sceneStat = document.getElementById("sceneStat");
+    const focusStat = document.getElementById("focusStat");
+    const styleStat = document.getElementById("styleStat");
+    const resultHint = document.getElementById("resultHint");
+    const toast = document.getElementById("toast");
+
+    let currentStories = [];
+    const recentTexts = [];
+    const recentTextSet = new Set();
+    let currentFeedbackImageFile = null;
+
+    function randomItem(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function maybeItem(list, chance = 0.65) {
+      return Math.random() < chance ? randomItem(list) : "";
+    }
+
+    function clampCount(value) {
+      const number = Number(value) || 4;
+      return Math.min(8, Math.max(1, number));
+    }
+
+    function pickScene(sceneValue) {
+      if (sceneValue !== "mixed") {
+        return sceneValue;
+      }
+
+      const keys = Object.keys(scenePools);
+      return randomItem(keys);
+    }
+
+    function pickFocusKey(focusValue) {
+      if (focusValue !== "mixed") {
+        return focusValue;
+      }
+      return randomItem(Object.keys(focusPools));
+    }
+
+    function pickStyle(styleValue) {
+      if (styleValue !== "mixed") {
+        return styleValue;
+      }
+      return randomItem(Object.keys(styleTemplates));
+    }
+
+    function pickPraiseText(focusKey, focusValue) {
+      if (focusValue === "mixed") {
+        const variants = [...praisePools.mixed, ...praisePools[focusKey]];
+        return randomItem(variants);
+      }
+      return randomItem([...(praisePools[focusKey] || []), ...praisePools.mixed]);
+    }
+
+    function pickCompanyClosing(focusKey, focusValue) {
+      if (focusValue === "mixed") {
+        const variants = [...companyClosings.mixed, ...companyClosings[focusKey]];
+        return randomItem(variants);
+      }
+      return randomItem([...(companyClosings[focusKey] || []), ...companyClosings.mixed]);
+    }
+
+    function rememberText(text) {
+      recentTexts.push(text);
+      recentTextSet.add(text);
+      if (recentTexts.length > 180) {
+        const removed = recentTexts.shift();
+        recentTextSet.delete(removed);
+      }
+    }
+
+    function normalizeParagraph(text) {
+      return text.replace(/\s+/g, "").trim();
+    }
+
+    function normalizeStory(text) {
+      return text
+        .split("\n")
+        .map((line) => line.replace(/\s+/g, "").trim())
+        .filter(Boolean)
+        .join("\n\n");
+    }
+
+    function buildCustomerMoment(scene, focusKey, focusValue) {
+      const parts = {
+        intro: randomItem(scene.intros),
+        background: randomItem(scene.backgrounds),
+        detail: randomItem(scene.details),
+        extra: maybeItem(scene.extras, 0.72),
+        focusText: randomItem(focusPools[focusKey]),
+        praise: pickPraiseText(focusKey, focusValue),
+        ending: maybeItem(endings, 0.68)
+      };
+
+      return normalizeParagraph(randomItem(customerNarrativeBuilders)(parts));
+    }
+
+    function buildStoryText(styleKey, scene, focusKey, focusValue) {
+      const customerMoment = buildCustomerMoment(scene, focusKey, focusValue);
+      const pack = {
+        opener: randomItem(styleOpeners[styleKey]),
+        sceneLead: randomItem(scene.serviceLeads),
+        bridge: randomItem(quoteBridges),
+        indirectBridge: randomItem(indirectBridges),
+        shortBridge: randomItem(shortBridges),
+        customerMoment,
+        close: pickCompanyClosing(focusKey, focusValue),
+        note: maybeItem(sideNotes, 0.62),
+        reaction: maybeItem(tinyReactions, 0.86),
+        sign: maybeItem(signOffs, 0.74),
+        leadThought: maybeItem(ownerNotes, 0.84)
+      };
+
+      return randomItem(styleTemplates[styleKey])(pack);
+    }
+
+    function createStory(sceneValue, focusValue, styleValue) {
+      const sceneKey = pickScene(sceneValue);
+      const scene = scenePools[sceneKey];
+      const focusKey = pickFocusKey(focusValue);
+      const styleKey = pickStyle(styleValue);
+      const text = buildStoryText(styleKey, scene, focusKey, focusValue);
+      const photoIdeas = selectPhotoIdeas(sceneKey, focusKey, styleKey);
+
+      return {
+        text,
+        sceneKey,
+        focusKey,
+        styleKey,
+        photoIdeas
+      };
+    }
+
+    function renderPhotoSection(photoIdeas) {
+      return `
+        <section class="photo-section">
+          <div class="photo-head">
+            <strong>朋友圈配图</strong>
+            <span>已直接生成 ${photoIdeas.length} 张适合一起发的图片</span>
+          </div>
+          <div class="photo-grid">
+            ${photoIdeas.map((photo, index) => `
+              <article class="photo-card">
+                <img class="photo-image" src="${photo.src}" alt="${photo.title}">
+                <div class="photo-meta">
+                  <strong>${photo.title}</strong>
+                  <span>配图 ${index + 1}</span>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function setFeedbackPreview(src) {
+      if (src) {
+        feedbackPreview.src = src;
+        feedbackPreview.classList.add("show");
+        uploadBox.classList.add("has-image");
+        uploadPlaceholder.hidden = true;
+      } else {
+        feedbackPreview.removeAttribute("src");
+        feedbackPreview.classList.remove("show");
+        uploadBox.classList.remove("has-image");
+        uploadPlaceholder.hidden = false;
+      }
+    }
+
+    function renderFeedbackResult(data) {
+      feedbackResult.innerHTML = `
+        <article class="result-card">
+          <div class="result-top">
+            <div class="chips">
+              <span class="chip">截图生成</span>
+              <span class="chip">${labels.scenes[data.sceneKey]}</span>
+              <span class="chip">${labels.focus[data.focusKey]}</span>
+              <span class="chip">${labels.styles[data.styleKey]}</span>
+            </div>
+            <button class="copy-single" id="copyFeedbackBtn">复制这条</button>
+          </div>
+          <p class="story">${data.text}</p>
+          ${renderPhotoSection(data.photoIdeas)}
+        </article>
+      `;
+
+      const copyFeedbackBtn = document.getElementById("copyFeedbackBtn");
+      if (copyFeedbackBtn) {
+        copyFeedbackBtn.addEventListener("click", () => {
+          copyText(data.text, "截图生成文案已复制");
+        });
+      }
+    }
+
+    function loadSampleFeedback() {
+      currentFeedbackImageFile = null;
+      setFeedbackPreview(createChatScreenshotDataUrl(sampleFeedbackMessages));
+      feedbackText.value = sampleFeedbackText;
+      ocrStatus.textContent = "当前已载入页面示例。你可以直接看效果，也可以上传自己的聊天截图继续生成。";
+      renderFeedbackResult(createFeedbackPost(sampleFeedbackText, "warm"));
+    }
+
+    async function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function extractTextFromFile(file) {
+      if (!("TextDetector" in window)) {
+        throw new Error("当前浏览器不支持自动识别截图文字，请手动补充聊天内容。");
+      }
+
+      const detector = new window.TextDetector();
+      const bitmap = await createImageBitmap(file);
+      try {
+        const blocks = await detector.detect(bitmap);
+        const lines = blocks
+          .slice()
+          .sort((a, b) => {
+            const deltaY = (a.boundingBox?.y || 0) - (b.boundingBox?.y || 0);
+            if (Math.abs(deltaY) > 12) {
+              return deltaY;
+            }
+            return (a.boundingBox?.x || 0) - (b.boundingBox?.x || 0);
+          })
+          .map((item) => item.rawValue?.trim())
+          .filter(Boolean);
+
+        return lines.join("\n");
+      } finally {
+        bitmap.close?.();
+      }
+    }
+
+    async function useImageFile(file) {
+      currentFeedbackImageFile = file;
+      const src = await readFileAsDataUrl(file);
+      setFeedbackPreview(src);
+      ocrStatus.textContent = "截图已载入，正在尽量识别文字，你也可以手动修改右侧内容。";
+
+      try {
+        const text = await extractTextFromFile(file);
+        if (text) {
+          feedbackText.value = text;
+          ocrStatus.textContent = "截图文字已识别完成，你可以直接生成，也可以先手动润色一下。";
+        } else {
+          ocrStatus.textContent = "截图已载入，但没有识别出足够文字。你可以手动把聊天内容补进去再生成。";
+        }
+      } catch (error) {
+        ocrStatus.textContent = error.message || "截图已载入，如果识别不到文字，可以直接手动补充聊天内容。";
+      }
+    }
+
+    async function triggerExtractFromCurrentImage() {
+      if (!currentFeedbackImageFile) {
+        ocrStatus.textContent = "当前是页面示例，不需要再次识别。你也可以上传自己的聊天截图。";
+        return;
+      }
+
+      ocrStatus.textContent = "正在重新识别截图文字...";
+      try {
+        const text = await extractTextFromFile(currentFeedbackImageFile);
+        if (text) {
+          feedbackText.value = text;
+          ocrStatus.textContent = "重新识别完成，你可以直接生成朋友圈文案。";
+        } else {
+          ocrStatus.textContent = "没有识别出足够文字，可以手动补充聊天内容。";
+        }
+      } catch (error) {
+        ocrStatus.textContent = error.message || "识别失败，可以直接手动粘贴聊天内容。";
+      }
+    }
+
+    function generateFromFeedbackInput() {
+      const raw = feedbackText.value.trim() || sampleFeedbackText;
+      renderFeedbackResult(createFeedbackPost(raw, styleSelect.value));
+      showToast("截图版朋友圈文案已生成");
+    }
+
+    function generateStories() {
+      const count = clampCount(countInput.value);
+      countInput.value = count;
+
+      const sceneValue = sceneSelect.value;
+      const focusValue = focusSelect.value;
+      const styleValue = styleSelect.value;
+      const uniqueTexts = new Set();
+      const stories = [];
+      let attempts = 0;
+
+      while (stories.length < count && attempts < 960) {
+        attempts += 1;
+        const story = createStory(sceneValue, focusValue, styleValue);
+        if (uniqueTexts.has(story.text) || recentTextSet.has(story.text)) {
+          continue;
+        }
+        uniqueTexts.add(story.text);
+        stories.push(story);
+      }
+
+      currentStories = stories;
+      currentStories.forEach((story) => rememberText(story.text));
+      renderStories();
+      updateStats();
+    }
+
+    function renderStories() {
+      if (!currentStories.length) {
+        resultList.innerHTML = `
+          <div class="empty">
+            还没有生成文案。<br>
+            点一下“随机生成”，这里就会出现可直接复制的朋友圈好评内容。
+          </div>
+        `;
+        return;
+      }
+
+      resultList.innerHTML = currentStories.map((story, index) => `
+        <article class="result-card" style="animation-delay:${index * 0.04}s">
+          <div class="result-top">
+            <div class="chips">
+              <span class="chip">${labels.scenes[story.sceneKey]}</span>
+              <span class="chip">${labels.focus[story.focusKey]}</span>
+              <span class="chip">${labels.styles[story.styleKey]}</span>
+              <span class="chip">文案 ${index + 1}</span>
+            </div>
+            <button class="copy-single" data-index="${index}">复制这条</button>
+          </div>
+          <p class="story">${story.text}</p>
+          <section class="photo-section">
+            <div class="photo-head">
+              <strong>朋友圈配图</strong>
+              <span>已直接生成 ${story.photoIdeas.length} 张适合一起发的图片</span>
+            </div>
+            <div class="photo-grid">
+              ${story.photoIdeas.map((photo) => `
+                <article class="photo-card">
+                  <img class="photo-image" src="${photo.src}" alt="${photo.title}">
+                  <div class="photo-meta">
+                    <strong>${photo.title}</strong>
+                    <span>配图示例</span>
+                  </div>
+                </article>
+              `).join("")}
+            </div>
+          </section>
+        </article>
+      `).join("");
+
+      resultList.querySelectorAll(".copy-single").forEach((button) => {
+        button.addEventListener("click", () => {
+          const index = Number(button.dataset.index);
+          copyText(currentStories[index].text, "这条文案已复制");
+        });
+      });
+    }
+
+    function updateStats() {
+      const count = currentStories.length || clampCount(countInput.value);
+      countStat.textContent = String(count);
+      sceneStat.textContent = labels.scenes[sceneSelect.value];
+      focusStat.textContent = labels.focus[focusSelect.value];
+      styleStat.textContent = labels.styles[styleSelect.value];
+      resultHint.textContent = currentStories.length
+        ? `已准备 ${currentStories.length} 条老板娘日常感文案`
+        : "还没有生成文案";
+    }
+
+    async function copyText(text, successMessage) {
+      if (!text) {
+        showToast("当前没有可复制的内容");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMessage);
+      } catch (error) {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand("copy");
+        helper.remove();
+        showToast(successMessage);
+      }
+    }
+
+    function copyAll() {
+      const text = currentStories.map((story, index) => `${index + 1}. ${story.text}`).join("\n\n");
+      copyText(text, "全部文案已复制");
+    }
+
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1800);
+    }
+
+    generateBtn.addEventListener("click", generateStories);
+    copyAllBtn.addEventListener("click", copyAll);
+    uploadImageBtn.addEventListener("click", () => feedbackImageInput.click());
+    extractTextBtn.addEventListener("click", triggerExtractFromCurrentImage);
+    useExampleBtn.addEventListener("click", loadSampleFeedback);
+    reloadPageBtn.addEventListener("click", () => window.location.reload());
+    generateFeedbackBtn.addEventListener("click", generateFromFeedbackInput);
+    sceneSelect.addEventListener("change", updateStats);
+    focusSelect.addEventListener("change", updateStats);
+    styleSelect.addEventListener("change", updateStats);
+    countInput.addEventListener("input", updateStats);
+    feedbackImageInput.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+      await useImageFile(file);
+    });
+    uploadBox.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      uploadBox.style.transform = "translateY(-2px)";
+    });
+    uploadBox.addEventListener("dragleave", () => {
+      uploadBox.style.transform = "";
+    });
+    uploadBox.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      uploadBox.style.transform = "";
+      const file = event.dataTransfer?.files?.[0];
+      if (!file || !file.type.startsWith("image/")) {
+        showToast("请拖入图片格式的聊天截图");
+        return;
+      }
+      await useImageFile(file);
+    });
+
+    generateStories();
+    loadSampleFeedback();
+  </script>
+</body>
+</html>
