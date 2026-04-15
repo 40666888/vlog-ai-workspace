@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "accountType": "campus_life",
+    "accountTypeLabel": "男大学生日常成长型",
+    "mainPlatform": "xiaohongshu",
+    "mainPlatformLabel": "小红书",
+    "accountVibe": "boyish",
+    "accountVibeLabel": "少年感",
+    "audience": "peers",
+    "audienceLabel": "同龄大学生",
+    "commonScene": "campus",
+    "commonSceneLabel": "校园 / 宿舍 / 教学楼",
+    "frequency": "3",
+    "frequencyLabel": "每周 3 条",
+    "accountBrief": "我想做一个有少年感、爱运动、不油腻的男大学生日常账号。",
+    "creatorState": "quick",
+    "creatorStateLabel": "今天想快速拍，别太复杂",
+    "extraRequirements": "希望更贴近校园真实状态。"
+  },
+  "filters": {
+    "objective": "growth",
+    "objectiveLabel": "涨粉 / 破圈",
+    "presence": "medium",
+    "presenceLabel": "中等出镜，偶尔露脸",
+    "difficulty": "easy",
+    "difficultyLabel": "低难度，拿起手机就能拍",
+    "duration": "short",
+    "durationLabel": "30-45 秒"
+  },
+  "references": {
+    "benchmarkRawText": "小红书 @阿昊的上学记录《男大学生早八前把自己收拾干净的一天》",
+    "creativeDraftText": "我想拍一条今天状态一般但还是去操场跑了两圈的轻量 vlog。",
+    "samples": [
+      {
+        "id": "reference-1",
+        "platform": "小红书",
+        "creator": "@阿昊的上学记录",
+        "title": "男大学生早八前把自己收拾干净的一天"
+      }
+    ],
+    "preferredId": "reference-1"
+  },
+  "referenceIdeas": [],
+  "creativeIdeas": [],
+  "activeIdea": null,
+  "calendarSettings": {
+    "startDate": "2026-04-13",
+    "windowDays": 7
+  }
+}

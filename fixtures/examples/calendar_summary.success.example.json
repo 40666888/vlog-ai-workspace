@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "data": {
+    "entries": [
+      {
+        "id": "calendar-entry-1",
+        "dateLabel": "04/13 周一",
+        "title": "普通校园日常也能拍出状态感",
+        "type": "人设建设",
+        "platform": "小红书",
+        "goal": "维持更新",
+        "reminder": "晚上补一段操场收尾镜头。"
+      },
+      {
+        "id": "calendar-entry-2",
+        "dateLabel": "04/15 周三",
+        "title": "男大学生上课前五分钟把状态拉回来",
+        "type": "涨粉尝试",
+        "platform": "抖音",
+        "goal": "提升完播",
+        "reminder": "前 3 秒先给反差感画面。"
+      }
+    ],
+    "snapshot": {
+      "focus": "先用状态感和轻量校园内容稳定更新频率",
+      "cadence": "建议隔天更新，本周先发 3 条",
+      "distribution": "校园日常 2 条 + 夜晚氛围 1 条",
+      "summary": "先稳人设，再穿插一条更适合涨粉的短节奏内容。"
+    }
+  },
+  "meta": {
+    "task": "calendar_summary",
+    "provider": "openai",
+    "providerLabel": "OpenAI",
+    "model": "gpt-4.1-mini",
+    "baseURL": "https://api.openai.com/v1",
+    "transport": "live",
+    "latencyMs": 1905,
+    "generatedAt": "2026-04-15T10:05:00.000Z",
+    "repairApplied": false,
+    "repairNotes": []
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "ideas": [
+      {
+        "ideaId": "reference-idea-1",
+        "topic": "男大学生上课前五分钟把状态拉回来",
+        "reference": "参考小红书同类早八准备爆款结构",
+        "scenario": "宿舍 / 教学楼",
+        "targetPlatform": "小红书",
+        "reason": "贴近你当前的校园日常和轻量拍摄状态。"
+      },
+      {
+        "idea_id": "reference-idea-2",
+        "heading": "操场夜跑后的洗漱收尾 vlog",
+        "source": "参考同类夜晚氛围感校园记录内容",
+        "setting": "操场 / 宿舍",
+        "channel": "抖音",
+        "fitReason": "运动和校园日常天然兼容，节奏也更容易剪短。"
+      }
+    ]
+  }
+}

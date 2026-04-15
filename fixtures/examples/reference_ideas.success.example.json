@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "data": {
+    "items": [
+      {
+        "id": "reference-idea-1",
+        "title": "男大学生上课前五分钟把状态拉回来",
+        "referenceBasis": "参考同类早八准备和校园状态感内容",
+        "scene": "宿舍 / 教学楼",
+        "platform": "小红书",
+        "recommendationReason": "更适合你当前的校园场景和轻量拍摄状态。"
+      },
+      {
+        "id": "reference-idea-2",
+        "title": "操场夜跑后的洗漱收尾 vlog",
+        "referenceBasis": "参考夜晚氛围感校园收尾内容",
+        "scene": "操场 / 宿舍",
+        "platform": "抖音",
+        "recommendationReason": "运动和校园日常兼容，适合切短节奏。"
+      }
+    ]
+  },
+  "meta": {
+    "task": "reference_ideas",
+    "provider": "openai",
+    "providerLabel": "OpenAI",
+    "model": "gpt-4.1-mini",
+    "baseURL": "https://api.openai.com/v1",
+    "transport": "live",
+    "latencyMs": 1680,
+    "generatedAt": "2026-04-15T10:00:00.000Z",
+    "repairApplied": false,
+    "repairNotes": []
+  }
+}

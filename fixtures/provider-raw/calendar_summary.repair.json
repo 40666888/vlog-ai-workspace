@@ -1,0 +1,37 @@
+{
+  "schedule": [
+    {
+      "dayId": "calendar-entry-1",
+      "day": "04/13 周一",
+      "contentTitle": "普通校园日常也能拍出状态感",
+      "category": "人设建设",
+      "channel": "小红书",
+      "objective": "维持更新",
+      "note": "晚上补一段操场收尾镜头。"
+    },
+    {
+      "entryId": "calendar-entry-2",
+      "label": "04/15 周三",
+      "topic": "男大学生上课前五分钟把状态拉回来",
+      "contentType": "涨粉尝试",
+      "platform": "抖音",
+      "goal": "提升完播",
+      "reminder": "前 3 秒先给反差感画面。"
+    },
+    {
+      "id": "calendar-entry-3",
+      "date": "04/17 周五",
+      "ideaTitle": "操场夜跑后的洗漱收尾 vlog",
+      "type": "情绪表达",
+      "targetPlatform": "小红书",
+      "purpose": "提升互动",
+      "tip": "夜景镜头优先拍环境氛围。"
+    }
+  ],
+  "strategySnapshot": {
+    "priority": "先用状态感和轻量校园内容稳定更新频率",
+    "frequency": "建议隔天更新，本周先发 3 条",
+    "mix": "校园日常 2 条 + 夜晚氛围 1 条 + 运动收尾 1 条",
+    "overview": "先稳人设，再穿插一条更适合涨粉的短节奏内容。"
+  }
+}

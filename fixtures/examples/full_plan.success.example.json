@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "data": {
+    "titleSuggestions": [
+      "普通校园日常也能拍出状态感",
+      "今天状态一般，但还是把自己拉回来了"
+    ],
+    "hook": "今天其实状态一般，但我还是想把这一天过得像样一点。",
+    "structure": [
+      "宿舍起床整理状态",
+      "下楼去教学楼",
+      "课间小片段",
+      "晚上操场收尾"
+    ],
+    "scriptSections": [
+      {
+        "label": "开场",
+        "content": "先用宿舍低机位带出起床状态，再快速切到洗漱和收包。"
+      },
+      {
+        "label": "中段",
+        "content": "出门路上手持跟拍，课间用一两句旁白讲今天的真实状态。"
+      }
+    ],
+    "subtitleKeywords": [
+      "男大学生日常",
+      "状态感",
+      "校园 vlog"
+    ],
+    "angles": [
+      "低机位走出宿舍",
+      "窗边侧逆光整理头发",
+      "手持跟拍下楼",
+      "固定机位拍书包桌面"
+    ],
+    "shotSuggestions": [
+      "广角跟拍走路转场",
+      "俯拍桌面整理随身物品"
+    ],
+    "notes": [
+      "注意宿舍环境噪音，开头口播尽量贴近手机麦克风。",
+      "前三秒先给出状态信息，再切日常动作。",
+      "室内光线不足时优先靠窗取景。"
+    ],
+    "broll": [
+      "鞋子系鞋带特写",
+      "书包拉链细节",
+      "操场夜色和呼吸节奏"
+    ]
+  },
+  "meta": {
+    "task": "full_plan",
+    "provider": "openai_compatible",
+    "providerLabel": "OpenAI Compatible",
+    "model": "deepseek-chat",
+    "baseURL": "https://api.deepseek.com/v1",
+    "transport": "live",
+    "latencyMs": 2410,
+    "generatedAt": "2026-04-15T10:02:00.000Z",
+    "repairApplied": true,
+    "repairNotes": [
+      "provider-response-normalized"
+    ]
+  }
+}

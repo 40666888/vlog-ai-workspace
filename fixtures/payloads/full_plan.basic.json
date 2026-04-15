@@ -1,0 +1,30 @@
+{
+  "profile": {
+    "accountType": "campus_life",
+    "mainPlatform": "xiaohongshu",
+    "mainPlatformLabel": "小红书",
+    "commonScene": "campus",
+    "commonSceneLabel": "校园 / 宿舍 / 教学楼",
+    "accountBrief": "有少年感、爱运动、不油腻的男大学生日常账号。",
+    "creatorState": "quick",
+    "creatorStateLabel": "今天想快速拍，别太复杂"
+  },
+  "references": {
+    "benchmarkRawText": "参考同类型校园状态感 vlog",
+    "creativeDraftText": "想拍一条普通的一天也能找回状态的内容。"
+  },
+  "activeIdea": {
+    "id": "creative-idea-1",
+    "title": "普通校园日常也能拍出状态感",
+    "platform": "小红书",
+    "scene": "校园 / 宿舍 / 教学楼",
+    "highlight": "用轻量日常细节把状态感拍出来",
+    "outcome": "更适合长期人设内容",
+    "difficulty": "低难度",
+    "recommendationReason": "兼顾校园真实感和人物状态。"
+  },
+  "calendarSettings": {
+    "startDate": "2026-04-13",
+    "windowDays": 7
+  }
+}

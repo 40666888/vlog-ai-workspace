@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "provider": "openai",
+  "providerLabel": "OpenAI",
+  "available": true,
+  "model": "gpt-4.1-mini",
+  "baseURL": "https://api.openai.com/v1",
+  "latencyMs": 812,
+  "errorCode": null,
+  "transport": "live",
+  "message": "OpenAI 连接成功，可以开始生成。"
+}

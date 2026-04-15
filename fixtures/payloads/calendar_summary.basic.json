@@ -1,0 +1,43 @@
+{
+  "profile": {
+    "mainPlatform": "xiaohongshu",
+    "mainPlatformLabel": "小红书",
+    "frequency": "3",
+    "frequencyLabel": "每周 3 条",
+    "commonScene": "campus",
+    "commonSceneLabel": "校园 / 宿舍 / 教学楼"
+  },
+  "referenceIdeas": [
+    {
+      "id": "reference-idea-1",
+      "title": "男大学生上课前五分钟把状态拉回来",
+      "referenceBasis": "对标早八准备类内容",
+      "scene": "宿舍 / 教学楼",
+      "platform": "小红书",
+      "recommendationReason": "更容易快速拍摄。"
+    }
+  ],
+  "creativeIdeas": [
+    {
+      "id": "creative-idea-1",
+      "title": "普通校园日常也能拍出状态感",
+      "highlight": "用轻量日常细节建立人设",
+      "scene": "校园 / 操场",
+      "outcome": "更适合长期人设内容",
+      "difficulty": "低难度",
+      "platform": "小红书",
+      "recommendationReason": "延展空间更大。"
+    }
+  ],
+  "activeIdea": {
+    "id": "creative-idea-1",
+    "title": "普通校园日常也能拍出状态感",
+    "platform": "小红书",
+    "scene": "校园 / 操场",
+    "recommendationReason": "先用状态感内容稳定更新。"
+  },
+  "calendarSettings": {
+    "startDate": "2026-04-13",
+    "windowDays": 7
+  }
+}

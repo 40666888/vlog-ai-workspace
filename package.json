@@ -1,0 +1,24 @@
+{
+  "name": "codex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "live:check": "node scripts/live-check.js",
+    "smoke": "node scripts/smoke.js",
+    "check:render": "node scripts/schema-render-check.mjs",
+    "validate:fixtures": "node scripts/validate-fixtures.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1"
+  }
+}

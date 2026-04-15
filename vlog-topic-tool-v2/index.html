@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vlog Spark Lab V2 | Vlog AI 创作工作台</title>
+    <meta
+      name="description"
+      content="连接你的 AI 接口，输入账号画像和参考素材，生成参考选题、创意选题、拍摄方案和工作日历摘要。"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="hero-card">
+        <p class="section-kicker">Vlog AI Workspace</p>
+        <h1>把画像、参考、选题、脚本和排期串成一条顺手的创作链路</h1>
+        <p class="hero-copy">
+          先连接 AI，再填写账号画像和参考素材。你会得到参考选题、创造性选题、脚本与拍摄建议，以及未来几天的工作日历摘要。
+        </p>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="panel connection-panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Step 0</p>
+            <h2>AI 连接设置</h2>
+          </div>
+          <div id="connection-status" class="connection-status is-idle">未连接</div>
+        </div>
+
+        <div class="connection-grid">
+          <label>
+            <span>供应商预设</span>
+            <select id="connection-preset"></select>
+          </label>
+
+          <label>
+            <span>Provider</span>
+            <select id="provider-select"></select>
+          </label>
+
+          <label>
+            <span>Model</span>
+            <input id="model-name" type="text" placeholder="例如：gpt-4.1-mini" />
+          </label>
+
+          <label id="api-key-field">
+            <span>API Key</span>
+            <div class="input-with-action">
+              <input id="api-key" type="password" placeholder="输入你的 API Key（如 OpenAI Key）" />
+              <button id="toggle-api-key" type="button" class="button button-ghost button-inline">显示</button>
+            </div>
+          </label>
+
+          <label>
+            <span>Base URL</span>
+            <input id="base-url" type="text" placeholder="例如：https://api.openai.com/v1" />
+          </label>
+
+          <label class="full-span">
+            <span>后端接口地址</span>
+            <input id="backend-endpoint" type="text" value="/api/generate" />
+          </label>
+        </div>
+
+        <label id="remember-api-key-field" class="toggle-field remember-field">
+          <span>仅在当前浏览器会话记住 API Key</span>
+          <input id="remember-api-key" type="checkbox" />
+        </label>
+
+        <p id="deployment-mode-note" class="inline-note capability-note"></p>
+        <p id="provider-capability-note" class="inline-note capability-note"></p>
+
+        <div class="button-row">
+          <button id="test-connection" type="button" class="button button-primary">连接测试</button>
+          <button id="export-connection-config" type="button" class="button button-ghost">导出连接配置</button>
+          <button id="import-connection-config" type="button" class="button button-ghost">导入连接配置</button>
+          <button id="clear-local-config" type="button" class="button button-ghost">重置连接配置</button>
+          <button id="reset-page-state" type="button" class="button button-ghost">重置页面状态</button>
+          <p id="connection-message" class="inline-note">先完成连接测试，再开始生成内容。</p>
+        </div>
+        <input id="connection-config-file" type="file" accept="application/json" hidden />
+
+        <div id="connection-report" class="connection-report"></div>
+
+        <p class="security-note">
+          这里适合个人使用或本地测试。正式产品环境更建议把密钥托管在服务端，不要长期直接暴露在前端页面里。
+        </p>
+
+        <details class="developer-panel">
+          <summary>开发者选项</summary>
+          <div class="developer-grid">
+            <label class="toggle-field">
+              <span>接口失败时启用 Mock Fallback</span>
+              <input id="mock-fallback" type="checkbox" />
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel live-check-panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Live Check</p>
+            <h2>最近一次真实联调结果</h2>
+            <p class="section-note">如果 `fixtures/live/` 里已有结果，这里会显示最近一次真实联调摘要。</p>
+          </div>
+          <button id="refresh-live-check" type="button" class="button button-ghost">刷新结果</button>
+        </div>
+        <div id="live-check-status-board" class="connection-report"></div>
+      </section>
+
+      <section id="error-page" class="panel error-page" hidden>
+        <div class="board-head">
+          <div>
+            <p class="section-kicker">Error</p>
+            <h2 id="error-page-title">本次生成遇到问题</h2>
+          </div>
+          <button id="dismiss-error-page" type="button" class="button button-ghost">收起</button>
+        </div>
+        <div id="error-page-content" class="error-page-content"></div>
+      </section>
+
+      <section class="panel workflow-run-panel">
+        <div class="board-head">
+          <div>
+            <p class="section-kicker">Flow</p>
+            <h2>完整工作流执行</h2>
+            <p class="section-note">一键按顺序生成参考选题、创意选题、拍摄方案和日历摘要。失败步骤可以单独重试。</p>
+          </div>
+        </div>
+        <div id="workflow-run-board" class="workflow-run-board"></div>
+      </section>
+
+      <section class="workflow-strip">
+        <article class="workflow-step">
+          <span>1</span>
+          <div>
+            <h3>画像输入</h3>
+            <p>告诉 AI 你是谁、拍什么、今天适合拍什么。</p>
+          </div>
+        </article>
+        <article class="workflow-step">
+          <span>2</span>
+          <div>
+            <h3>参考选题</h3>
+            <p>从对标标题或你已有的创意草稿中提炼更适合你的方向。</p>
+          </div>
+        </article>
+        <article class="workflow-step">
+          <span>3</span>
+          <div>
+            <h3>拍摄方案</h3>
+            <p>围绕已选题材输出脚本、机位、镜头和注意事项。</p>
+          </div>
+        </article>
+        <article class="workflow-step">
+          <span>4</span>
+          <div>
+            <h3>日历摘要</h3>
+            <p>把结果整理成未来 7 到 14 天的简洁排期。</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Step 1</p>
+              <h2>自媒体画像输入</h2>
+            </div>
+          </div>
+
+          <form id="filter-form" class="profile-form">
+            <label>
+              <span>账号定位</span>
+              <select id="account-type-select"></select>
+            </label>
+
+            <label>
+              <span>主要平台</span>
+              <select id="main-platform-select"></select>
+            </label>
+
+            <label>
+              <span>内容风格</span>
+              <select id="account-vibe-select"></select>
+            </label>
+
+            <label>
+              <span>目标受众</span>
+              <select id="audience-select"></select>
+            </label>
+
+            <label>
+              <span>常拍场景</span>
+              <select id="common-scene-select"></select>
+            </label>
+
+            <label>
+              <span>更新频率</span>
+              <select id="frequency-select"></select>
+            </label>
+
+            <label class="full-span">
+              <span>账号一句话描述</span>
+              <input
+                id="account-brief-input"
+                type="text"
+                placeholder="例如：我想做一个有少年感、爱运动、不油腻的男大学生日常账号。"
+              />
+            </label>
+
+            <label>
+              <span>今日拍摄状态</span>
+              <select id="creator-state-select"></select>
+            </label>
+
+            <label class="full-span">
+              <span>补充要求</span>
+              <textarea
+                id="extra-requirements"
+                rows="4"
+                placeholder="例如：今天只能在宿舍和教学楼附近拍；希望更像小红书；想保留运动感但不想太复杂。"
+              ></textarea>
+            </label>
+
+            <details class="more-settings full-span">
+              <summary>更多设置</summary>
+              <div class="more-settings-grid">
+                <label>
+                  <span>内容目的</span>
+                  <select id="objective-select"></select>
+                </label>
+                <label>
+                  <span>出镜强度</span>
+                  <select id="presence-select"></select>
+                </label>
+                <label>
+                  <span>拍摄难度</span>
+                  <select id="difficulty-select"></select>
+                </label>
+                <label>
+                  <span>视频长度</span>
+                  <select id="duration-select"></select>
+                </label>
+              </div>
+            </details>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Step 2</p>
+              <h2>参考素材输入</h2>
+            </div>
+          </div>
+
+          <p class="section-note">
+            把“想参考什么”和“你自己已经想到什么”分开输入，AI 会先提炼更贴近对标样本的方向，再延展成更适合你账号的创意选题。
+          </p>
+
+          <label class="stack-field">
+            <span>对标爆款参考</span>
+            <textarea
+              id="reference-data"
+              rows="6"
+              placeholder="一行一条。示例：小红书 @阿昊的上学记录《男大学生早八前把自己收拾干净的一天》"
+            ></textarea>
+          </label>
+
+          <label class="stack-field">
+            <span>我的创意草稿</span>
+            <textarea
+              id="creative-draft-data"
+              rows="4"
+              placeholder="例如：我想拍一条“今天状态一般，但还是去操场跑了两圈”的轻量校园 vlog。"
+            ></textarea>
+          </label>
+
+          <div class="button-row">
+            <button id="parse-references" type="button" class="button button-secondary">识别参考条目</button>
+            <button id="clear-references" type="button" class="button button-ghost">清空输入</button>
+          </div>
+
+          <div id="reference-sample-list" class="reference-sample-list"></div>
+
+          <div class="button-row primary-actions">
+            <button id="generate-reference-ideas" type="button" class="button button-primary">生成参考选题</button>
+            <button id="generate-creative-ideas" type="button" class="button button-secondary">生成创意选题</button>
+            <button id="run-full-flow" type="button" class="button button-ghost">一键生成完整流程</button>
+          </div>
+
+          <div id="global-feedback"></div>
+        </article>
+      </section>
+
+      <section class="result-section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Step 3</p>
+            <h2>选题结果</h2>
+          </div>
+          <div id="current-selection" class="selection-summary"></div>
+        </div>
+
+        <div class="result-grid">
+          <article class="panel">
+            <div class="board-head">
+              <div>
+                <h3>参考选题</h3>
+                <p class="section-note">更贴近你给出的样本与对标方向。</p>
+              </div>
+              <div id="reference-ideas-metadata" class="soft-status"></div>
+            </div>
+            <div id="reference-ideas-grid" class="idea-grid"></div>
+          </article>
+
+          <article class="panel">
+            <div class="board-head">
+              <div>
+                <h3>创意选题</h3>
+                <p class="section-note">在你的账号画像下更有新意、也更适合长期做的方向。</p>
+              </div>
+              <div id="creative-ideas-metadata" class="soft-status"></div>
+            </div>
+            <div id="creative-ideas-grid" class="idea-grid"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel current-focus-panel">
+        <div class="board-head">
+          <div>
+            <p class="section-kicker">Current Focus</p>
+            <h2>当前处理内容</h2>
+            <p class="section-note">后续生成脚本、拍摄建议和日历摘要时，都会默认围绕这条选题继续展开。</p>
+          </div>
+          <div class="button-row">
+            <button id="copy-current-idea" type="button" class="button button-ghost">复制当前选题</button>
+          </div>
+        </div>
+
+        <div id="current-focus-card" class="current-focus-card"></div>
+        <div id="next-step-hint" class="next-step-hint"></div>
+      </section>
+
+      <section class="result-grid bottom-grid">
+        <article class="panel">
+          <div class="board-head">
+            <div>
+              <p class="section-kicker">Step 4</p>
+              <h2>拍摄方案生成</h2>
+            </div>
+            <div class="board-actions">
+              <div id="script-metadata" class="soft-status"></div>
+              <button id="copy-script" type="button" class="button button-ghost">复制当前脚本</button>
+              <button id="copy-shooting-advice" type="button" class="button button-ghost">复制拍摄建议</button>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="generate-script" type="button" class="button button-secondary">生成脚本</button>
+            <button id="generate-shooting-advice" type="button" class="button button-secondary">生成拍摄建议</button>
+            <button id="generate-full-plan" type="button" class="button button-primary">生成完整拍摄方案</button>
+          </div>
+
+          <div id="script-board" class="script-board">
+            <div id="script-module-state" class="module-state"></div>
+            <div class="script-grid">
+              <article class="script-card">
+                <h4>标题建议</h4>
+                <div id="script-title-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>开头 Hook</h4>
+                <div id="script-hook-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>脚本大纲</h4>
+                <div id="script-structure-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>分段脚本</h4>
+                <div id="script-sections-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>拍摄角度</h4>
+                <div id="script-angles-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>镜头设计</h4>
+                <div id="script-shots-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>拍摄注意事项</h4>
+                <div id="script-notes-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>B-roll 建议</h4>
+                <div id="script-broll-output"></div>
+              </article>
+              <article class="script-card">
+                <h4>字幕关键词</h4>
+                <div id="script-subtitles-output"></div>
+              </article>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="board-head">
+            <div>
+              <p class="section-kicker">Step 5</p>
+              <h2>工作日历摘要</h2>
+            </div>
+            <div class="board-actions">
+              <div id="calendar-metadata" class="soft-status"></div>
+              <button id="export-calendar" type="button" class="button button-ghost">导出日历摘要</button>
+            </div>
+          </div>
+
+          <div class="calendar-toolbar">
+            <label>
+              <span>开始日期</span>
+              <input id="calendar-start" type="date" />
+            </label>
+
+            <label>
+              <span>周期</span>
+              <select id="calendar-window">
+                <option value="7">未来 7 天</option>
+                <option value="14">未来 14 天</option>
+              </select>
+            </label>
+
+            <button id="generate-calendar" type="button" class="button button-secondary">生成日历摘要</button>
+          </div>
+
+          <div id="calendar-module-state" class="module-state"></div>
+
+          <div id="strategy-snapshot" class="strategy-snapshot">
+            <div class="snapshot-grid">
+              <article class="snapshot-card">
+                <span>本周期重点</span>
+                <strong id="snapshot-focus">待生成</strong>
+              </article>
+              <article class="snapshot-card">
+                <span>建议更新频率</span>
+                <strong id="snapshot-frequency">待生成</strong>
+              </article>
+              <article class="snapshot-card">
+                <span>内容分布建议</span>
+                <strong id="snapshot-distribution">待生成</strong>
+              </article>
+            </div>
+            <p id="snapshot-summary" class="section-note"></p>
+          </div>
+
+          <div id="calendar-grid" class="calendar-grid"></div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
